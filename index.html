@@ -7,98 +7,137 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
 body{background:#0a0a12;color:white}
-header{background:#11111f;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-.logo{font-size:24px;font-weight:900;color:#a855f7}
+header{background:#11111f;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.logo{font-weight:900;font-size:20px}
 .logo span{color:#22c55e}
-header input{padding:8px 12px;border-radius:20px;border:none;width:40%;background:#222;color:white}
-.hero{text-align:center;padding:50px 15px;background:linear-gradient(180deg,#7c3aed,#111); }
+header a{background:#22c55e;color:white;padding:8px 16px;border-radius:20px;text-decoration:none;font-weight:bold;font-size:14px}
+.hero{text-align:center;padding:50px 15px;background:linear-gradient(180deg,#7c3aed,#111)}
 .hero h1{font-size:32px;line-height:1.1}
 .hero h1 span{color:#22c55e}
 .hero p{margin:15px 0;color:#ddd}
-.btn-green{background:#22c55e;color:white;padding:14px 22px;border-radius:30px;text-decoration:none;font-weight:bold;display:inline-block}
-.badges{display:flex;justify-content:center;gap:10px;margin-top:15px;font-size:13px}
-.badges div{background:#ffffff1a;padding:8px 12px;border-radius:20px}
-h2{padding:20px 15px 10px;color:#c084fc}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 15px}
-.card{background:#1a1a2e;border:1px solid #a855f7;border-radius:15px;padding:15px;text-align:center}
-.card img{width:100%;height:110px;object-fit:cover;border-radius:10px}
-.card h3{margin:10px 0 5px}
-.card p{font-size:13px;color:#aaa}
-.price{font-size:18px;font-weight:bold;color:#22c55e;margin:8px 0}
-.card a{background:#22c55e;color:white;padding:10px;display:block;border-radius:10px;text-decoration:none;font-weight:bold}
-.pagos{padding:15px;display:flex;gap:12px}
-.pago{flex:1;text-align:center;padding:18px;border-radius:15px;font-weight:900;font-size:18px}
-.saldo{border:2px solid #a855f7;background:#2a0a4a}
-.cup{border:2px solid #22c55e;background:#0a2a15}
-.pasos{padding:0 15px 20px}
-.pasos div{background:#1a1a2e;margin-bottom:10px;padding:15px;border-radius:12px}
-footer{text-align:center;padding:20px;font-size:13px;color:#888}
-.whatsapp-float{position:fixed;bottom:20px;right:20px;background:#22c55e;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;text-decoration:none}
+.hero button{background:#22c55e;border:none;padding:12px 25px;border-radius:25px;color:white;font-weight:bold;font-size:16px}
+.container{padding:20px;max-width:900px;margin:auto}
+h2{margin:25px 0 15px;font-size:22px}
+.game{background:#1a1a2e;border:1px solid #333;border-radius:15px;padding:15px;margin-bottom:20px}
+.game-top{display:flex;justify-content:space-between;align-items:center}
+.game-top h3{font-size:19px}
+.game-top span{background:#7c3aed;padding:4px 10px;border-radius:15px;font-size:12px}
+.paquete{background:#222244;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.paquete b{font-size:15px}
+.paquete small{color:#aaa;display:block;font-size:12px}
+.paquete .precio{color:#22c55e;font-weight:900;font-size:16px;text-align:right}
+.btn-pedir{background:#22c55e;color:white;border:none;padding:7px 12px;border-radius:20px;font-weight:bold;margin-top:5px;cursor:pointer}
+.btn-mas{width:100%;background:#333;border:none;color:white;padding:10px;border-radius:10px;margin-top:12px;cursor:pointer;font-weight:bold}
+.oculto{display:none}
+.pasos{background:#1a1a2e;padding:20px;border-radius:15px;margin-top:20px}
+.pasos p{margin:10px 0}
+footer{text-align:center;padding:20px;color:#888;font-size:13px}
+.whats{position:fixed;bottom:15px;right:15px;background:#25D366;color:white;padding:14px 18px;border-radius:50px;text-decoration:none;font-weight:bold}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">Vorka<span>Store</span></div>
-  <input placeholder="🔍 Buscar juego...">
-  <div>🛒 ☰</div>
+<div class="logo">VORKA<span>STORE</span></div>
+<a href="https://wa.me/5350000000">WhatsApp</a>
 </header>
 
 <div class="hero">
-  <h1>RECARGA TU JUEGO<br><span>FAVORITO AL INSTANTE</span></h1>
-  <p>Recargas rápidas, seguras y 24/7 para Cuba<br>• Pago fácil por SALDO MÓVIL o CUP</p>
-  <a class="btn-green" href="https://wa.me/535XXXXXXX?text=Hola%20VorkaStore,%20quiero%20recargar">💬 Recargar Ahora por WhatsApp</a>
-  <div class="badges"><div>⚡ Entrega Rápida</div><div>🔒 100% Segura</div><div>🕐 24/7</div></div>
+<h1>Recarga tu juego<br><span>favorito en Cuba</span></h1>
+<p>Rápido, seguro y por transferencia. Elige tu juego, tu paquete y paga en CUP.</p>
+<button onclick="document.getElementById('juegos').scrollIntoView({behavior:'smooth'})">Ver Juegos 👇</button>
 </div>
 
-<h2>JUEGOS DISPONIBLES</h2>
-<div class="grid">
-  <div class="card">
-    <img src="https://i.imgur.com/8QZ8QZ8.jpg">
-    <h3>Free Fire</h3><p>Desde 100 Diamantes</p>
-    <div class="price">500 CUP / Saldo Móvil</div>
-    <a href="https://wa.me/535XXXXXXX?text=Quiero%20recargar%20Free%20Fire">Recargar Ahora</a>
-  </div>
-  <div class="card">
-    <img src="https://i.imgur.com/roblox.jpg">
-    <h3>Roblox</h3><p>Desde 80 Robux</p>
-    <div class="price">400 CUP / Saldo Móvil</div>
-    <a href="https://wa.me/535XXXXXXX?text=Quiero%20recargar%20Roblox">Recargar Ahora</a>
-  </div>
-  <div class="card">
-    <h3>Genshin Impact</h3><p>Desde 60 Cristales</p>
-    <div class="price">600 CUP / Saldo Móvil</div>
-    <a href="https://wa.me/535XXXXXXX?text=Quiero%20recargar%20Genshin">Recargar Ahora</a>
-  </div>
-  <div class="card">
-    <h3>Honor of Kings</h3><p>Desde 20 Tokens</p>
-    <div class="price">350 CUP / Saldo Móvil</div>
-    <a href="https://wa.me/535XXXXXXX?text=Quiero%20recargar%20Honor%20of%20Kings">Recargar Ahora</a>
-  </div>
-  <div class="card">
-    <h3>Mobile Legends</h3><p>Desde 10 Diamantes</p>
-    <div class="price">300 CUP / Saldo Móvil</div>
-    <a href="https://wa.me/535XXXXXXX?text=Quiero%20recargar%20Mobile%20Legends">Recargar Ahora</a>
-  </div>
+<div class="container" id="juegos">
+<h2>🔥 Juegos Disponibles</h2>
+
+<!-- FREE FIRE -->
+<div class="game">
+<div class="game-top"><h3>🔥 Free Fire</h3><span>Diamantes</span></div>
+<div class="paquete"><div><b>100 Diamantes</b><small>Entrega en 5-10 min</small></div><div><div class="precio">350 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 100 Diamantes - 350 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>310 Diamantes</b><small>El más vendido</small></div><div><div class="precio">950 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 310 Diamantes - 950 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>520 Diamantes</b><small>Oferta</small></div><div><div class="precio">1,500 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 520 Diamantes - 1500 CUP')">Pedir</button></div></div>
+
+<div id="mas-ff" class="oculto">
+<div class="paquete"><div><b>1,060 Diamantes</b><small>Pack grande</small></div><div><div class="precio">2,900 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 1060 Diamantes - 2900 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>2,180 Diamantes</b><small>Pack PRO</small></div><div><div class="precio">5,800 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 2180 Diamantes - 5800 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>5,600 Diamantes</b><small>Pack VIP</small></div><div><div class="precio">14,500 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 5600 Diamantes - 14500 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>Pase Booyah</b><small>Temporada actual</small></div><div><div class="precio">1,100 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - Pase Booyah - 1100 CUP')">Pedir</button></div></div>
+</div>
+<button class="btn-mas" onclick="verMas('mas-ff',this)">Ver más paquetes ⬇️</button>
 </div>
 
-<h2>MÉTODOS DE PAGO</h2>
-<div class="pagos">
-  <div class="pago saldo">📱 SALDO MÓVIL</div>
-  <div class="pago cup">💵 CUP</div>
-</div>
-<p style="text-align:center;font-size:13px;color:#aaa;padding:0 15px">Pagos seguros y verificados • Confirmación instantánea por WhatsApp</p>
+<!-- ROBLOX -->
+<div class="game">
+<div class="game-top"><h3>🟥 Roblox</h3><span>Robux</span></div>
+<div class="paquete"><div><b>80 Robux</b><small>Para empezar</small></div><div><div class="precio">320 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 80 Robux - 320 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>400 Robux</b><small>El más vendido</small></div><div><div class="precio">1,450 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 400 Robux - 1450 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>800 Robux</b><small>Oferta</small></div><div><div class="precio">2,800 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 800 Robux - 2800 CUP')">Pedir</button></div></div>
 
-<h2>CÓMO COMPRAR</h2>
+<div id="mas-rb" class="oculto">
+<div class="paquete"><div><b>1,700 Robux</b><small>Pack grande</small></div><div><div class="precio">5,600 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 1700 Robux - 5600 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>4,500 Robux</b><small>Pack PRO</small></div><div><div class="precio">14,000 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 4500 Robux - 14000 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>10,000 Robux</b><small>Pack VIP</small></div><div><div class="precio">30,000 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 10000 Robux - 30000 CUP')">Pedir</button></div></div>
+</div>
+<button class="btn-mas" onclick="verMas('mas-rb',this)">Ver más paquetes ⬇️</button>
+</div>
+
+<!-- PUBG -->
+<div class="game">
+<div class="game-top"><h3>🎯 PUBG Mobile</h3><span>UC</span></div>
+<div class="paquete"><div><b>60 UC</b><small>Básico</small></div><div><div class="precio">350 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 60 UC - 350 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>325 UC</b><small>El más vendido</small></div><div><div class="precio">1,600 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 325 UC - 1600 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>660 UC</b><small>Oferta</small></div><div><div class="precio">3,100 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 660 UC - 3100 CUP')">Pedir</button></div></div>
+
+<div id="mas-pubg" class="oculto">
+<div class="paquete"><div><b>1,800 UC</b><small>Pack grande</small></div><div><div class="precio">8,200 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 1800 UC - 8200 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>3,850 UC</b><small>Pack PRO</small></div><div><div class="precio">16,500 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 3850 UC - 16500 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>8,100 UC</b><small>Pack VIP</small></div><div><div class="precio">33,000 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 8100 UC - 33000 CUP')">Pedir</button></div></div>
+</div>
+<button class="btn-mas" onclick="verMas('mas-pubg',this)">Ver más paquetes ⬇️</button>
+</div>
+
+<!-- SALDO MOVIL -->
+<div class="game">
+<div class="game-top"><h3>📱 Saldo Móvil</h3><span>Cuba</span></div>
+<div class="paquete"><div><b>Recarga 250 CUP</b><small>Cubacel</small></div><div><div class="precio">250 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 250 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>Recarga 500 CUP</b><small>Cubacel</small></div><div><div class="precio">500 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 500 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>Recarga 1000 CUP</b><small>Cubacel</small></div><div><div class="precio">1000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 1000 CUP')">Pedir</button></div></div>
+<div id="mas-saldo" class="oculto">
+<div class="paquete"><div><b>Recarga 2000 CUP</b><small>Cubacel</small></div><div><div class="precio">2000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 2000 CUP')">Pedir</button></div></div>
+<div class="paquete"><div><b>Recarga 3000 CUP</b><small>Cubacel</small></div><div><div class="precio">3000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 3000 CUP')">Pedir</button></div></div>
+</div>
+<button class="btn-mas" onclick="verMas('mas-saldo',this)">Ver más paquetes ⬇️</button>
+</div>
+
 <div class="pasos">
-  <div><b>1. Elige tu juego</b><br>Selecciona Free Fire, Roblox, etc.</div>
-  <div><b>2. Toca Recargar Ahora</b><br>Se abre tu WhatsApp con el mensaje listo</div>
-  <div><b>3. Paga por Saldo Móvil o CUP</b><br>Te digo a qué número transferir</div>
-  <div><b>4. Recibes tu recarga</b><br>En minutos, con captura de confirmación</div>
+<h2>¿Cómo pedir?</h2>
+<p>1️⃣ Elige tu juego y paquete</p>
+<p>2️⃣ Dale a Pedir y te abre WhatsApp</p>
+<p>3️⃣ Manda tu ID y transfiere en CUP</p>
+<p>4️⃣ Te recargamos en 5-10 minutos ✅</p>
 </div>
 
-<footer>VorkaStore • Servicio 24/7 • Cuba • @vorkastore</footer>
-<a class="whatsapp-float" href="https://wa.me/535XXXXXXX">💬</a>
+</div>
 
+<footer>VorkaStore © 2026 - La Habana, Cuba<br>Pagos por Transfermóvil / EnZona</footer>
+<a class="whats" href="https://wa.me/5350000000">💬 WhatsApp</a>
+
+<script>
+function pedir(texto){
+  var msg = "Hola VorkaStore! Quiero pedir: " + texto;
+  window.open("https://wa.me/5350000000?text=" + encodeURIComponent(msg), "_blank");
+}
+function verMas(id, btn){
+  var el = document.getElementById(id);
+  if(el.classList.contains('oculto')){
+    el.classList.remove('oculto');
+    btn.innerHTML = "Ver menos paquetes ⬆️";
+  } else {
+    el.classList.add('oculto');
+    btn.innerHTML = "Ver más paquetes ⬇️";
+  }
+}
+</script>
 </body>
 </html>
