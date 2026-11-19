@@ -118,7 +118,18 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
   <label for="pw">Contraseña</label><input id="pw" type="password" autocomplete="current-password">
   <div class="msg" id="amsg"></div>
   <div class="row"><button class="btn" onclick="auth('up')">Crear cuenta</button><button class="btn p" onclick="auth('in')">Iniciar sesión</button></div>
-  <div class="row"><button class="btn" onclick="this.closest('dialog').close()">Cerrar</button></div>
+  <div class="row"><button class="btn" onclick="openReset()">Olvidé mi contraseña</button><button class="btn" onclick="this.closest('dialog').close()">Cerrar</button></div>
+</dialog>
+
+<dialog id="reset">
+  <h3>Recuperar contraseña</h3>
+  <label for="rem">Correo de tu cuenta</label><input id="rem" type="email" autocomplete="email">
+  <div id="rstep2" hidden>
+    <label for="rcode">Código que te llegó al correo</label><input id="rcode" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+    <label for="rpw">Nueva contraseña</label><input id="rpw" type="password" autocomplete="new-password">
+  </div>
+  <div class="msg" id="rmsg"></div>
+  <div class="row"><button class="btn" onclick="this.closest('dialog').close()">Cerrar</button><button class="btn p" id="rbtn" onclick="resetStep()">Enviar código</button></div>
 </dialog>
 
 <dialog id="panel">
@@ -200,9 +211,45 @@ async function order() {
 async function auth(kind) {
   const email = $('#em').value.trim(), password = $('#pw').value, msg = $('#amsg');
   if (!sb) { msg.textContent = 'Conecta Supabase en el código.'; return; }
-  const { error } = kind === 'up' ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
-  msg.textContent = error ? error.message : (kind === 'up' ? 'Cuenta creada. Revisa tu correo si pide confirmación.' : '');
-  if (!error && kind === 'in') $('#login').close();
+  const { data, error } = kind === 'up' ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+  if (error) { msg.textContent = tr(error.message); return; }
+  if (data.session) { msg.textContent = ''; $('#login').close(); }
+  else msg.textContent = 'Cuenta creada. Revisa tu correo para confirmarla.';
+}
+
+const TR = {
+  'Invalid login credentials': 'Correo o contraseña incorrectos. Si aún no tienes cuenta, toca “Crear cuenta”.',
+  'User already registered': 'Ese correo ya tiene cuenta. Toca “Iniciar sesión”.'
+};
+const tr = m => TR[m] || m;
+
+let rstep = 1;
+function openReset() {
+  $('#login').close();
+  rstep = 1; $('#rstep2').hidden = true; $('#rbtn').textContent = 'Enviar código';
+  $('#rmsg').textContent = ''; $('#rem').value = $('#em').value;
+  $('#reset').showModal();
+}
+
+async function resetStep() {
+  const msg = $('#rmsg'), email = $('#rem').value.trim();
+  if (!sb) { msg.textContent = 'Conecta Supabase en el código.'; return; }
+  if (!email) { msg.textContent = 'Escribe el correo de tu cuenta.'; return; }
+  if (rstep === 1) {
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    if (error) { msg.textContent = tr(error.message); return; }
+    rstep = 2; $('#rstep2').hidden = false; $('#rbtn').textContent = 'Cambiar contraseña';
+    msg.textContent = 'Si ese correo tiene cuenta, te enviamos un código. Revisa también la carpeta de spam.';
+    return;
+  }
+  const token = $('#rcode').value.trim(), password = $('#rpw').value;
+  if (!token || password.length < 6) { msg.textContent = 'Escribe el código y una contraseña de 6 caracteres o más.'; return; }
+  const { error } = await sb.auth.verifyOtp({ email, token, type: 'recovery' });
+  if (error) { msg.textContent = 'Código incorrecto o vencido. Pide uno nuevo.'; return; }
+  const { error: e2 } = await sb.auth.updateUser({ password });
+  if (e2) { msg.textContent = tr(e2.message); return; }
+  msg.textContent = 'Contraseña cambiada. Ya iniciaste sesión.';
+  setTimeout(() => $('#reset').close(), 1200);
 }
 
 function paintAuth(s) {
@@ -235,4 +282,3 @@ async function panel(k) {
 </script>
 </body>
 </html>
-
