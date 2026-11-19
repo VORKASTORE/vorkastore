@@ -3,241 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vorka - Recargas y Diamantes</title>
+<title>VORKA STORE - Recargas Cuba</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
-body{background:#07070f;color:white}
-header{background:#0d0d1a;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;border-bottom:1px solid #222}
-.logo{font-weight:900;font-size:22px;letter-spacing:1px}
-.logo span{color:#00e5ff}
-.logo small{display:block;font-size:10px;color:#888;letter-spacing:3px;font-weight:400}
-header a{background:#25D366;color:white;padding:8px 14px;border-radius:20px;text-decoration:none;font-weight:bold;font-size:13px}
-.hero{padding:35px 15px 25px;text-align:center;background:radial-gradient(circle at top,#1a1a3a 0%,#07070f 70%)}
-.hero .badge{background:#1e1e35;border:1px solid #333;padding:6px 12px;border-radius:20px;font-size:12px;color:#00e5ff}
-.hero h1{font-size:34px;margin:15px 0 8px;line-height:1.05}
-.hero h1 span{color:#00e5ff}
-.hero p{color:#aaa;font-size:14px;line-height:1.4}
-.search{margin:20px auto 0;max-width:500px;background:#141427;border:1px solid #2a2a4a;border-radius:25px;display:flex;overflow:hidden}
-.search input{flex:1;background:transparent;border:none;padding:13px 16px;color:white;outline:none;font-size:14px}
-.search button{background:#00e5ff;border:none;padding:0 18px;font-size:18px;cursor:pointer}
-.filtros{display:flex;gap:8px;overflow-x:auto;padding:15px;white-space:nowrap;scrollbar-width:none}
-.filtros button{background:#1a1a2e;border:1px solid #333;color:#ccc;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:bold}
-.filtros button.activo{background:#00e5ff;color:#000;border-color:#00e5ff}
-.container{padding:0 15px 30px;max-width:1000px;margin:auto}
-.section-title{font-size:20px;margin:10px 0 15px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
-.card{background:#131327;border:1px solid #232344;border-radius:18px;overflow:hidden;padding-bottom:12px}
-.card .img{height:90px;display:flex;align-items:center;justify-content:center;font-size:45px}
-.ff{background:linear-gradient(135deg,#ff3d00,#ff9100)}
-.rb{background:linear-gradient(135deg,#e11d48,#7c3aed)}
-.pubg{background:linear-gradient(135deg,#f59e0b,#111)}
-.cod{background:linear-gradient(135deg,#111,#444)}
-.saldo{background:linear-gradient(135deg,#00c853,#00e5ff)}
-.brawl{background:linear-gradient(135deg,#ff5722,#ffc107)}
-.card h3{padding:10px 12px 2px;font-size:15px}
-.card p{padding:0 12px;color:#888;font-size:12px}
-.card .desde{padding:8px 12px 0;color:#00e5ff;font-weight:900;font-size:13px}
-.card button{width:calc(100% - 24px);margin:10px 12px 0;background:#00e5ff;border:none;padding:9px;border-radius:10px;font-weight:900;cursor:pointer}
-.pagina-juego{display:none;padding:0 15px 30px;max-width:800px;margin:auto}
-.volver{background:#222;border:none;color:white;padding:8px 14px;border-radius:20px;margin:15px 0;cursor:pointer}
-.paquete{background:#17172e;border:1px solid #2a2a4a;padding:14px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.paquete b{font-size:15px}
-.paquete small{color:#888;display:block;font-size:12px;margin-top:2px}
-.precio{color:#00e5ff;font-weight:900;font-size:16px;text-align:right}
-.btn-pedir{background:#25D366;color:white;border:none;padding:8px 14px;border-radius:20px;font-weight:bold;margin-top:5px;cursor:pointer}
-.btn-mas{width:100%;background:#222;border:none;color:white;padding:11px;border-radius:12px;margin-top:5px;cursor:pointer;font-weight:bold}
-.oculto{display:none}
-.info{background:#131327;border:1px solid #232344;border-radius:15px;padding:18px;margin:10px 15px}
-.info h3{margin-bottom:10px}
-.info p{color:#aaa;font-size:14px;margin:8px 0;line-height:1.4}
-footer{text-align:center;padding:25px;color:#666;font-size:12px;line-height:1.5}
-.whats{position:fixed;bottom:15px;right:15px;background:#25D366;color:white;padding:13px 18px;border-radius:50px;text-decoration:none;font-weight:bold;box-shadow:0 5px 20px rgba(0,0,0,.5);z-index:20}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:#0f0f1a;color:white;padding:15px;padding-bottom:40px}
+header{text-align:center;padding:20px 0}
+header h1{font-size:34px;color:#a855f7} header h1 span{color:#22c55e}
+header p{color:#aaa;margin-top:6px;font-size:14px}
+.badge{display:inline-block;background:#22c55e22;border:1px solid #22c55e;color:#22c55e;padding:4px 10px;border-radius:20px;font-size:12px;margin-top:10px}
+.filtros{display:flex;gap:8px;overflow-x:auto;padding:12px 0}
+.filtros button{background:#1e1e2e;color:white;border:1px solid #333;padding:9px 16px;border-radius:20px;white-space:nowrap;cursor:pointer}
+.filtros button.active{background:#a855f7;border-color:#a855f7}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
+.card{background:#1e1e2e;border-radius:14px;overflow:hidden;border:1px solid #333}
+.card .img{height:95px;display:flex;align-items:center;justify-content:center;font-size:42px;background:#2a2a3a}
+.card .info{padding:12px}
+.card h3{font-size:15px}
+.card .juego{font-size:12px;color:#a855f7;margin:3px 0}
+.card .precio{font-size:19px;font-weight:bold;color:#22c55e;margin:8px 0}
+.card button{width:100%;background:#22c55e;color:white;border:none;padding:11px;border-radius:8px;font-weight:bold;cursor:pointer}
+.card button:active{transform:scale(.98)}
+#estado{text-align:center;color:#888;padding:20px}
+footer{text-align:center;color:#666;font-size:12px;margin-top:30px;line-height:1.6}
+footer a{color:#22c55e;text-decoration:none}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">VORKA<span>💎</span><small>RECARGAS CUBA</small></div>
-<a href="https://wa.me/5350000000">WhatsApp</a>
+<h1>VORKA<span> STORE</span></h1>
+<p>Recargas rápidas en Cuba 🔥 | Transfermóvil • Zelle • USDT</p>
+<div class="badge">● EN VIVO - Conectado a Supabase</div>
 </header>
 
-<div id="inicio">
-<div class="hero">
-<span class="badge">⚡ Entrega en 5-10 minutos • Pago en CUP</span>
-<h1>Recarga tu juego<br><span>favorito en Cuba</span></h1>
-<p>Diamantes, Robux, UC y Saldo Móvil.<br>Seguro, rápido y por Transfermóvil.</p>
-<div class="search"><input id="buscador" placeholder="🔍 Busca tu juego... Free Fire, Roblox..." oninput="buscar()"><button>🔍</button></div>
+<div class="filtros" id="filtros">
+<button class="active" onclick="filtrar('Todos',this)">Todos</button>
+<button onclick="filtrar('Free Fire',this)">🔥 Free Fire</button>
+<button onclick="filtrar('Roblox',this)">🧱 Roblox</button>
+<button onclick="filtrar('PUBG',this)">🎯 PUBG</button>
 </div>
 
-<div class="filtros">
-<button class="activo" onclick="filtrar('todos',this)">Todos</button>
-<button onclick="filtrar('ff',this)">Free Fire</button>
-<button onclick="filtrar('roblox',this)">Roblox</button>
-<button onclick="filtrar('pubg',this)">PUBG</button>
-<button onclick="filtrar('saldo',this)">Saldo Móvil</button>
-<button onclick="filtrar('otros',this)">Otros</button>
-</div>
+<div id="estado">Cargando productos...</div>
+<div class="grid" id="lista"></div>
 
-<div class="container">
-<h2 class="section-title">🔥 Más Populares</h2>
-<div class="grid" id="grid">
-
-<div class="card" data-nombre="free fire diamantes" data-cat="ff">
-<div class="img ff">🔥</div><h3>Free Fire</h3><p>Diamantes • Pase Booyah</p><div class="desde">Desde 350 CUP</div><button onclick="abrir('ff')">Ver Paquetes →</button>
-</div>
-
-<div class="card" data-nombre="roblox robux" data-cat="roblox">
-<div class="img rb">🟥</div><h3>Roblox</h3><p>Robux • Premium</p><div class="desde">Desde 320 CUP</div><button onclick="abrir('roblox')">Ver Paquetes →</button>
-</div>
-
-<div class="card" data-nombre="pubg uc" data-cat="pubg">
-<div class="img pubg">🎯</div><h3>PUBG Mobile</h3><p>UC • Royale Pass</p><div class="desde">Desde 350 CUP</div><button onclick="abrir('pubg')">Ver Paquetes →</button>
-</div>
-
-<div class="card" data-nombre="saldo movil cubacel recarga" data-cat="saldo">
-<div class="img saldo">📱</div><h3>Saldo Móvil</h3><p>Cubacel • Nauta</p><div class="desde">Desde 250 CUP</div><button onclick="abrir('saldo')">Ver Paquetes →</button>
-</div>
-
-<div class="card" data-nombre="call of duty cod points" data-cat="otros">
-<div class="img cod">🎖️</div><h3>Call of Duty Mobile</h3><p>CP • Pase de Batalla</p><div class="desde">Desde 450 CUP</div><button onclick="abrir('cod')">Ver Paquetes →</button>
-</div>
-
-<div class="card" data-nombre="brawl stars gemas" data-cat="otros">
-<div class="img brawl">⭐</div><h3>Brawl Stars</h3><p>Gemas • Brawl Pass</p><div class="desde">Desde 400 CUP</div><button onclick="abrir('brawl')">Ver Paquetes →</button>
-</div>
-
-</div>
-
-<div class="info">
-<h3>¿Cómo pedir? 🤔</h3>
-<p>1️⃣ Elige tu juego y paquete</p>
-<p>2️⃣ Dale a Pedir y te abre WhatsApp</p>
-<p>3️⃣ Manda tu ID y transfiere en CUP</p>
-<p>4️⃣ Te recargamos en 5-10 minutos ✅</p>
-</div>
-
-</div>
-</div>
-
-<!-- PAGINA FREE FIRE -->
-<div id="pag-ff" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>🔥 Free Fire - Diamantes</h2>
-<p style="color:#888;font-size:13px;margin:5px 0 15px">Entrega rápida • Solo necesitas tu ID de jugador</p>
-<div class="paquete"><div><b>100 Diamantes</b><small>Entrega 5-10 min</small></div><div><div class="precio">350 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 100 Diamantes - 350 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>310 Diamantes</b><small>⭐ El más vendido</small></div><div><div class="precio">950 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 310 Diamantes - 950 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>520 Diamantes</b><small>Oferta</small></div><div><div class="precio">1,500 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 520 Diamantes - 1500 CUP')">Pedir</button></div></div>
-<div id="mas-ff" class="oculto">
-<div class="paquete"><div><b>1,060 Diamantes</b><small>Pack grande</small></div><div><div class="precio">2,900 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 1060 Diamantes - 2900 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>2,180 Diamantes</b><small>Pack PRO</small></div><div><div class="precio">5,800 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 2180 Diamantes - 5800 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>5,600 Diamantes</b><small>Pack VIP</small></div><div><div class="precio">14,500 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - 5600 Diamantes - 14500 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>Pase Booyah</b><small>Temporada actual</small></div><div><div class="precio">1,100 CUP</div><button class="btn-pedir" onclick="pedir('Free Fire - Pase Booyah - 1100 CUP')">Pedir</button></div></div>
-</div>
-<button class="btn-mas" onclick="verMas('mas-ff',this)">Ver más paquetes ⬇️</button>
-</div>
-
-<!-- PAGINA ROBLOX -->
-<div id="pag-roblox" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>🟥 Roblox - Robux</h2>
-<p style="color:#888;font-size:13px;margin:5px 0 15px">Entrega por Game Pass / Grupo</p>
-<div class="paquete"><div><b>80 Robux</b><small>Para empezar</small></div><div><div class="precio">320 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 80 Robux - 320 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>400 Robux</b><small>⭐ El más vendido</small></div><div><div class="precio">1,450 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 400 Robux - 1450 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>800 Robux</b><small>Oferta</small></div><div><div class="precio">2,800 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 800 Robux - 2800 CUP')">Pedir</button></div></div>
-<div id="mas-rb" class="oculto">
-<div class="paquete"><div><b>1,700 Robux</b><small>Pack grande</small></div><div><div class="precio">5,600 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 1700 Robux - 5600 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>4,500 Robux</b><small>Pack PRO</small></div><div><div class="precio">14,000 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 4500 Robux - 14000 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>10,000 Robux</b><small>Pack VIP</small></div><div><div class="precio">30,000 CUP</div><button class="btn-pedir" onclick="pedir('Roblox - 10000 Robux - 30000 CUP')">Pedir</button></div></div>
-</div>
-<button class="btn-mas" onclick="verMas('mas-rb',this)">Ver más paquetes ⬇️</button>
-</div>
-
-<!-- PAGINA PUBG -->
-<div id="pag-pubg" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>🎯 PUBG Mobile - UC</h2>
-<div class="paquete"><div><b>60 UC</b><small>Básico</small></div><div><div class="precio">350 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 60 UC - 350 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>325 UC</b><small>⭐ El más vendido</small></div><div><div class="precio">1,600 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 325 UC - 1600 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>660 UC</b><small>Oferta</small></div><div><div class="precio">3,100 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 660 UC - 3100 CUP')">Pedir</button></div></div>
-<div id="mas-pubg" class="oculto">
-<div class="paquete"><div><b>1,800 UC</b><small>Pack grande</small></div><div><div class="precio">8,200 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 1800 UC - 8200 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>3,850 UC</b><small>Pack PRO</small></div><div><div class="precio">16,500 CUP</div><button class="btn-pedir" onclick="pedir('PUBG - 3850 UC - 16500 CUP')">Pedir</button></div></div>
-</div>
-<button class="btn-mas" onclick="verMas('mas-pubg',this)">Ver más paquetes ⬇️</button>
-</div>
-
-<!-- PAGINA SALDO -->
-<div id="pag-saldo" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>📱 Saldo Móvil - Cubacel</h2>
-<div class="paquete"><div><b>Recarga 250 CUP</b><small>Cubacel</small></div><div><div class="precio">250 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 250 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>Recarga 500 CUP</b><small>Cubacel</small></div><div><div class="precio">500 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 500 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>Recarga 1000 CUP</b><small>Cubacel</small></div><div><div class="precio">1000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 1000 CUP')">Pedir</button></div></div>
-<div id="mas-saldo" class="oculto">
-<div class="paquete"><div><b>Recarga 2000 CUP</b><small>Cubacel</small></div><div><div class="precio">2000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 2000 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>Recarga 3000 CUP</b><small>Cubacel</small></div><div><div class="precio">3000 CUP</div><button class="btn-pedir" onclick="pedir('Saldo Movil - 3000 CUP')">Pedir</button></div></div>
-</div>
-<button class="btn-mas" onclick="verMas('mas-saldo',this)">Ver más paquetes ⬇️</button>
-</div>
-
-<!-- PAGINA COD -->
-<div id="pag-cod" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>🎖️ Call of Duty Mobile</h2>
-<div class="paquete"><div><b>80 CP</b><small>Básico</small></div><div><div class="precio">450 CUP</div><button class="btn-pedir" onclick="pedir('COD - 80 CP - 450 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>420 CP</b><small>El más vendido</small></div><div><div class="precio">1,900 CUP</div><button class="btn-pedir" onclick="pedir('COD - 420 CP - 1900 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>880 CP</b><small>Oferta</small></div><div><div class="precio">3,700 CUP</div><button class="btn-pedir" onclick="pedir('COD - 880 CP - 3700 CUP')">Pedir</button></div></div>
-</div>
-
-<!-- PAGINA BRAWL -->
-<div id="pag-brawl" class="pagina-juego">
-<button class="volver" onclick="volver()">← Volver</button>
-<h2>⭐ Brawl Stars</h2>
-<div class="paquete"><div><b>30 Gemas</b><small>Básico</small></div><div><div class="precio">400 CUP</div><button class="btn-pedir" onclick="pedir('Brawl - 30 Gemas - 400 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>80 Gemas</b><small>El más vendido</small></div><div><div class="precio">950 CUP</div><button class="btn-pedir" onclick="pedir('Brawl - 80 Gemas - 950 CUP')">Pedir</button></div></div>
-<div class="paquete"><div><b>170 Gemas</b><small>Oferta</small></div><div><div class="precio">1,850 CUP</div><button class="btn-pedir" onclick="pedir('Brawl - 170 Gemas - 1850 CUP')">Pedir</button></div></div>
-</div>
-
-<footer>VORKA © 2026 - La Habana, Cuba<br>Pagos por Transfermóvil / EnZona<br>Hecho con 💎 para gamers cubanos</footer>
-<a class="whats" href="https://wa.me/5350000000">💬 WhatsApp</a>
+<footer>
+Vorka Store © 2026<br>
+¿Dudas? <a href="https://wa.me/5350000000">Escríbenos por WhatsApp</a><br>
+Cambia tu número buscando 5350000000 en el código
+</footer>
 
 <script>
-function pedir(texto){
-  var msg = "Hola Vorka! Quiero pedir: " + texto;
-  window.open("https://wa.me/5350000000?text=" + encodeURIComponent(msg), "_blank");
+const SUPABASE_URL = "https://hrluauvoefmkneopensn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_l9K4mAfh_uDEhvC8E3jjiw_Qu9FHMnk";
+const MI_WA = "5350000000"; // <-- CAMBIA POR TU NUMERO REAL
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let productos = [];
+let filtroActual = 'Todos';
+
+function emojiPorJuego(juego){
+  if(juego==='Free Fire') return '🔥';
+  if(juego==='Roblox') return '🧱';
+  if(juego==='PUBG') return '🎯';
+  return '🎮';
 }
-function verMas(id, btn){
-  var el = document.getElementById(id);
-  if(el.classList.contains('oculto')){ el.classList.remove('oculto'); btn.innerHTML="Ver menos ⬆️"; }
-  else { el.classList.add('oculto'); btn.innerHTML="Ver más paquetes ⬇️"; }
+
+async function cargar(){
+  const { data, error } = await supabaseClient.from('productos').select('*').eq('activo', true).order('precio');
+  if(error){
+    document.getElementById('estado').innerHTML = 'Error: '+error.message;
+    return;
+  }
+  productos = data;
+  document.getElementById('estado').style.display='none';
+  mostrar();
 }
-function abrir(juego){
-  document.getElementById('inicio').style.display='none';
-  document.querySelectorAll('.pagina-juego').forEach(p=>p.style.display='none');
-  document.getElementById('pag-'+juego).style.display='block';
-  window.scrollTo(0,0);
-}
-function volver(){
-  document.querySelectorAll('.pagina-juego').forEach(p=>p.style.display='none');
-  document.getElementById('inicio').style.display='block';
-  window.scrollTo(0,0);
-}
-function filtrar(cat, btn){
-  document.querySelectorAll('.filtros button').forEach(b=>b.classList.remove('activo'));
-  btn.classList.add('activo');
-  document.querySelectorAll('.card').forEach(c=>{
-    if(cat==='todos' || c.dataset.cat===cat) c.style.display='block';
-    else c.style.display='none';
+
+function mostrar(){
+  const lista = document.getElementById('lista');
+  lista.innerHTML = '';
+  productos.filter(p => filtroActual==='Todos' || p.juego===filtroActual).forEach(p=>{
+    lista.innerHTML += `
+    <div class="card">
+      <div class="img">${emojiPorJuego(p.juego)}</div>
+      <div class="info">
+        <h3>${p.nombre}</h3>
+        <div class="juego">${p.juego}</div>
+        <div class="precio">${p.precio} CUP</div>
+        <button onclick="pedir(${p.id})">Pedir por WhatsApp</button>
+      </div>
+    </div>`;
   });
 }
-function buscar(){
-  var texto = document.getElementById('buscador').value.toLowerCase();
-  document.querySelectorAll('.card').forEach(c=>{
-    if(c.dataset.nombre.includes(texto)) c.style.display='block';
-    else c.style.display='none';
-  });
+
+function filtrar(f,btn){
+  filtroActual=f;
+  document.querySelectorAll('.filtros button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  mostrar();
 }
+
+async function pedir(id){
+  const p = productos.find(x=>x.id===id);
+  // Guardar pedido en Supabase
+  await supabaseClient.from('pedidos').insert([{ juego: p.juego, paquete: p.nombre, precio: p.precio, estado: 'pendiente', cliente: 'WhatsApp' }]);
+  const msg = `Hola Vorka! Quiero pedir: ${p.juego} - ${p.nombre} - ${p.precio} CUP`;
+  window.open(`https://wa.me/${MI_WA}?text=`+encodeURIComponent(msg), '_blank');
+}
+
+cargar();
 </script>
 </body>
 </html>
