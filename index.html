@@ -1,1 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VORKASTORE · Recargas de juegos y gift cards en USDT</title>
+<meta name="description" content="Recarga Free Fire, Mobile Legends y más con USDT (red BEP20). Pon tu ID, elige el paquete y paga.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Cpath d='M10 16h14l8 20 8-20h14L32 52z' fill='%23ff5a1f'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0a0a0a;--card:#151515;--line:#2a2a2a;--tx:#f4f4f2;--mut:#9a9a96;--or:#ff5a1f;--or2:#ff7a45}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 "Trebuchet MS","Segoe UI",system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+a{color:inherit;text-decoration:none}
+.w{max-width:1040px;margin:0 auto;padding:0 18px}
+header{position:sticky;top:0;z-index:5;background:rgba(10,10,10,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .w{display:flex;align-items:center;gap:20px;height:60px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;letter-spacing:.5px}
+.logo svg{width:30px;height:30px}
+nav{display:flex;gap:18px;margin-left:auto;color:var(--mut);font-size:15px}
+nav a:hover{color:var(--tx)}
+.hero{padding:56px 0 40px}
+.hero h1{font-size:clamp(34px,7vw,64px);line-height:1.05;max-width:11em;letter-spacing:-1.5px}
+.hero h1 b{color:var(--or)}
+.hero p{color:var(--mut);max-width:32em;margin:16px 0 26px;font-size:18px}
+.btn{display:inline-block;background:var(--or);color:#120600;font-weight:700;border:0;border-radius:10px;padding:13px 22px;font-size:16px;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--or2)}
+.btn:disabled{background:#333;color:#777;cursor:not-allowed}
+.btn.g{background:transparent;color:var(--tx);border:1px solid var(--line)}
+h2{font-size:24px;margin:40px 0 16px;letter-spacing:-.3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.g-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;color:var(--tx);cursor:pointer;font-family:inherit;font-size:inherit}
+.g-card:hover,.g-card:focus-visible{border-color:var(--or);outline:0}
+.ico{height:84px;border-radius:10px;display:grid;place-items:center;font-size:30px;font-weight:800;margin-bottom:10px;background:linear-gradient(135deg,#2a1208,#ff5a1f 140%);color:#fff}
+.g-card small{color:var(--mut);display:block}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:40px}
+.feat div{border-left:3px solid var(--or);padding:4px 0 4px 14px}
+.feat p{color:var(--mut);font-size:15px}
+footer{border-top:1px solid var(--line);margin-top:56px;padding:28px 0;color:var(--mut);font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.modal.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+@media(min-width:600px){.modal{align-items:center}.sheet{border-radius:18px}}
+.sheet h3{font-size:22px;margin-bottom:4px}
+.pk{display:grid;gap:8px;margin:14px 0}
+.pk label{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.pk input{display:none}
+.pk label:has(input:checked){border-color:var(--or);background:#1d120c}
+.pk label.off{opacity:.5;cursor:not-allowed}
+.pr{color:var(--or);font-weight:700;white-space:nowrap}
+input[type=text]{width:100%;background:#0e0e0e;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:12px;font-size:16px;margin:6px 0 14px;font-family:inherit}
+input[type=text]:focus{border-color:var(--or);outline:0}
+.lbl{font-size:14px;color:var(--mut)}
+.addr{word-break:break-all;background:#0e0e0e;border:1px dashed var(--or);border-radius:10px;padding:12px;margin:6px 0 12px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.msg{margin-top:12px;font-size:14px;color:var(--or2)}
+.row{display:flex;gap:10px;margin-top:6px}.row .btn{flex:1}
+</style>
+</head>
+<body>
+<header><div class="w">
+  <a class="logo" href="#">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 10h16l10 24 10-24h16L38 56H26z" fill="#ff5a1f"/><path d="M27 20l12 7-12 7z" fill="#0a0a0a"/></svg>
+    VORKASTORE
+  </a>
+  <nav><a href="#juegos">Juegos</a><a href="#giftcards">Gift Cards</a><a id="tg" href="#" target="_blank" rel="noopener">Soporte</a></nav>
+</div></header>
 
+<main class="w">
+  <section class="hero">
+    <h1>Recarga tu juego en minutos. Paga en <b>USDT</b>.</h1>
+    <p>Pon tu ID de jugador, elige el paquete y paga por la red BEP20. Si algo falla, te devolvemos el importe.</p>
+    <a class="btn" href="#juegos">Recargar ahora</a>
+  </section>
+
+  <h2 id="juegos">Elige tu juego</h2>
+  <div class="grid" id="games"></div>
+
+  <h2 id="giftcards">Gift Cards</h2>
+  <div class="grid" id="cards"></div>
+
+  <div class="feat">
+    <div><h3>Pedido claro</h3><p>Ves el paquete, el precio en USDT y la cuenta que recibe la recarga antes de pagar.</p></div>
+    <div><h3>Si algo falla, se devuelve</h3><p>Si no podemos entregar tu recarga, recuperas el importe.</p></div>
+    <div><h3>Soporte por Telegram</h3><p>Escríbenos y te respondemos, sin formularios ni tickets.</p></div>
+  </div>
+</main>
+<footer><div class="w">© <span id="yr"></span> VORKASTORE. Todos los precios están en USDT (red BEP20).</div></footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="sheet" id="sheet"></div></div>
+
+<script>
+/* ====== CONFIGURA AQUÍ ====== */
+const CFG = {
+  SUPABASE_URL: "",            // ej. https://xxxx.supabase.co
+  SUPABASE_ANON_KEY: "",       // clave "anon public" (nunca la service_role)
+  WALLET_USDT_BEP20: "",       // tu dirección de cobro en red BEP20
+  TELEGRAM_URL: ""             // ej. https://t.me/tu_usuario
+};
+/* Precios en USDT. p:null = aún sin precio (botón desactivado). */
+const CATALOG = [
+  {id:"free-fire",name:"Free Fire",tag:"Battle Royale",type:"game",pk:[{l:"110 Diamantes",p:null}]},
+  {id:"blood-strike",name:"Blood Strike",tag:"Shooter",type:"game",pk:[]},
+  {id:"mobile-legends",name:"Mobile Legends",tag:"MOBA",type:"game",pk:[]},
+  {id:"arena-breakout",name:"Arena Breakout",tag:"Shooter",type:"game",pk:[]},
+  {id:"honor-of-kings",name:"Honor of Kings",tag:"MOBA",type:"game",pk:[]},
+  {id:"genshin-impact",name:"Genshin Impact",tag:"RPG",type:"game",pk:[]},
+  {id:"wuthering-waves",name:"Wuthering Waves",tag:"RPG",type:"game",pk:[]},
+  {id:"roblox",name:"Roblox",tag:"Plataforma",type:"card",pk:[]},
+  {id:"xbox",name:"Xbox",tag:"Saldo para tienda",type:"card",pk:[]},
+  {id:"playstation",name:"PlayStation",tag:"Saldo para tienda",type:"card",pk:[]},
+  {id:"apple",name:"Apple",tag:"Saldo para tienda",type:"card",pk:[]},
+  {id:"nintendo",name:"Nintendo",tag:"Saldo para tienda",type:"card",pk:[]}
+];
+/* ============================ */
+const $ = s => document.querySelector(s);
+const money = n => n.toFixed(2).replace(/\.00$/, "") + " USDT";
+$("#yr").textContent = new Date().getFullYear();
+if (CFG.TELEGRAM_URL) $("#tg").href = CFG.TELEGRAM_URL;
+
+function tile(g){
+  const b = document.createElement("button");
+  b.className = "g-card";
+  b.innerHTML = `<div class="ico">${g.name[0]}</div><strong>${g.name}</strong><small>${g.tag}</small>`;
+  b.onclick = () => openGame(g);
+  return b;
+}
+CATALOG.forEach(g => $(g.type === "game" ? "#games" : "#cards").appendChild(tile(g)));
+
+let sel = null;
+function openGame(g){
+  sel = {g, pk:null};
+  const list = g.pk.length ? g.pk.map((x,i) => `
+    <label class="${x.p==null?'off':''}"><span>${x.l}</span>
+      <span class="pr">${x.p==null?'Sin precio':money(x.p)}</span>
+      <input type="radio" name="pk" value="${i}" ${x.p==null?'disabled':''}></label>`).join("")
+    : `<p class="lbl">Los paquetes de ${g.name} estarán disponibles pronto.</p>`;
+  $("#sheet").innerHTML = `
+    <h3 id="mt">Recargar ${g.name}</h3><p class="lbl">${g.tag}</p>
+    <div class="pk">${list}</div>
+    <label class="lbl" for="pid">${g.type==="game"?"ID de jugador":"Correo para recibir el código"}</label>
+    <input type="text" id="pid" autocomplete="off" placeholder="${g.type==="game"?"Ej. 123456789":"tucorreo@ejemplo.com"}">
+    <div class="row"><button class="btn g" onclick="closeM()">Cancelar</button><button class="btn" id="go">Continuar</button></div>
+    <p class="msg" id="m"></p>`;
+  $("#go").onclick = step2;
+  $("#modal").classList.add("on");
+}
+function closeM(){ $("#modal").classList.remove("on"); }
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeM(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeM(); });
+
+function step2(){
+  const r = document.querySelector('input[name=pk]:checked'), pid = $("#pid").value.trim();
+  if (!r) return $("#m").textContent = "Elige un paquete.";
+  if (pid.length < 4) return $("#m").textContent = "Escribe un ID o correo válido.";
+  const p = sel.g.pk[+r.value]; sel.pk = p; sel.pid = pid;
+  $("#sheet").innerHTML = `
+    <h3 id="mt">Paga ${money(p.p)}</h3>
+    <p class="lbl">${sel.g.name} · ${p.l} · cuenta ${pid}</p>
+    <p class="lbl" style="margin-top:14px">Envía exactamente ${money(p.p)} por la red BEP20 (BNB Smart Chain) a:</p>
+    <div class="addr">${CFG.WALLET_USDT_BEP20 || "Configura WALLET_USDT_BEP20 en index.html"}</div>
+    <label class="lbl" for="tx">Hash de la transacción (TXID)</label>
+    <input type="text" id="tx" autocomplete="off" placeholder="0x…">
+    <div class="row"><button class="btn g" onclick="openGame(sel.g)">Atrás</button><button class="btn" id="send">Ya pagué</button></div>
+    <p class="msg" id="m"></p>`;
+  $("#send").onclick = send;
+}
+async function send(){
+  const tx = $("#tx").value.trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) return $("#m").textContent = "El TXID debe empezar por 0x y tener 66 caracteres.";
+  if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return $("#m").textContent = "Falta configurar Supabase en index.html: el pedido no se guardó.";
+  $("#send").disabled = true;
+  try{
+    const res = await fetch(CFG.SUPABASE_URL + "/rest/v1/orders", {
+      method:"POST",
+      headers:{"Content-Type":"application/json",apikey:CFG.SUPABASE_ANON_KEY,Authorization:"Bearer "+CFG.SUPABASE_ANON_KEY,Prefer:"return=minimal"},
+      body:JSON.stringify({game:sel.g.name,package:sel.pk.l,usdt:sel.pk.p,player_id:sel.pid,txid:tx})
+    });
+    if (!res.ok) throw new Error(res.status);
+    $("#sheet").innerHTML = `<h3 id="mt">Pedido recibido</h3><p class="lbl" style="margin:8px 0 18px">Revisamos tu pago y enviamos la recarga a ${sel.pid}. Guarda tu TXID por si necesitas soporte.</p><button class="btn" onclick="closeM()">Listo</button>`;
+  }catch(e){
+    $("#send").disabled = false;
+    $("#m").textContent = "No se pudo guardar el pedido. Revisa tu conexión e inténtalo de nuevo.";
+  }
+}
+</script>
+</body>
+</html>
