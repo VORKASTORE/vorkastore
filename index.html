@@ -154,6 +154,7 @@ const PAY = '0x64241FB29cBa1c0acBfbdEAAA59515Fb5fbE79C5';
 
 const sb = SUPABASE_URL.startsWith('http') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const $ = s => document.querySelector(s);
+const fmt = n => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
 // [slug, nombre, género, color, agotado]
 const GAMES = [
@@ -181,7 +182,7 @@ function nextImg(el, s) {
   const i = (+el.dataset.i || 0) + 1, u = urls(s);
   if (i < u.length) { el.dataset.i = i; el.src = u[i]; } else el.remove();
 }
-const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.47], ["105 BC", 0.83], ["320 BC", 2.61], ["540 BC", 4.28], ["1100 BC", 8.69], ["2260 BC", 17.28], ["5800 BC", 43.03]], "honor-of-kings": [["16 Tokens", 0.2], ["80 Tokens", 0.98], ["240 Tokens", 2.94], ["400 Tokens", 4.9], ["560 Tokens", 6.87], ["830 Tokens", 9.8], ["1245 Tokens", 14.71], ["2508 Tokens", 29.43], ["4180 Tokens", 49.05], ["8360 Tokens", 98.09]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.17], ["300 + 30 Cristales Génesis", 5.84], ["980 + 110 Cristales Génesis", 17.49], ["1980 + 260 Cristales Génesis", 34.98], ["3280 + 600 Cristales Génesis", 58.29], ["6480 + 1600 Cristales Génesis", 116.57]]};
+const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.601], ["105 BC", 0.9657], ["320 BC", 2.4165], ["540 BC", 3.8774], ["1100 BC", 7.5548], ["2260 BC", 14.7987], ["5800 BC", 36.5808]], "honor-of-kings": [["16 Tokens", 0.2], ["80 Tokens", 0.98], ["240 Tokens", 2.94], ["400 Tokens", 4.9], ["560 Tokens", 6.87], ["830 Tokens", 9.8], ["1245 Tokens", 14.71], ["2508 Tokens", 29.43], ["4180 Tokens", 49.05], ["8360 Tokens", 98.09]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.17], ["300 + 30 Cristales Génesis", 5.84], ["980 + 110 Cristales Génesis", 17.49], ["1980 + 260 Cristales Génesis", 34.98], ["3280 + 600 Cristales Génesis", 58.29], ["6480 + 1600 Cristales Génesis", 116.57]]};
 const DEMO = ['Paquete 1','Paquete 2','Paquete 3','Paquete 4'].map(name => ({ id: null, name }));
 
 $('#games').innerHTML = GAMES.map(g =>
@@ -206,7 +207,7 @@ async function openGame(slug) {
 }
 
 function price(p) {
-  return p.price_usdt == null ? 'Precio pronto' : Number(p.price_usdt).toFixed(2) + ' USDT';
+  return p.price_usdt == null ? 'Precio pronto' : fmt(Number(p.price_usdt)) + ' USDT';
 }
 
 function drawPk() {
@@ -232,7 +233,7 @@ async function order() {
     return;
   }
   bal = Number(data.balance); paintAuth(true); paintBal();
-  msg.innerHTML = `Pedido #${data.order_id} pagado con tu saldo (<b>${Number(data.amount).toFixed(2)} USDT</b>). Te quedan <b>${bal.toFixed(2)} USDT</b>. Si tarda la entrega, escríbenos por <a href="${WHATSAPP}" target="_blank" rel="noopener" style="color:var(--ac)">WhatsApp</a> con tu número de pedido.`;
+  msg.innerHTML = `Pedido #${data.order_id} pagado con tu saldo (<b>${fmt(Number(data.amount))} USDT</b>). Te quedan <b>${fmt(bal)} USDT</b>. Si tarda la entrega, escríbenos por <a href="${WHATSAPP}" target="_blank" rel="noopener" style="color:var(--ac)">WhatsApp</a> con tu número de pedido.`;
 }
 
 async function auth(kind) {
@@ -281,7 +282,7 @@ async function resetStep() {
 
 function paintAuth(s) {
   $('#auth').innerHTML = s
-    ? `<button class="btn" onclick="panel('${bal == null ? 'profile' : 'wallet'}')">${bal == null ? 'Mi cuenta' : bal.toFixed(2) + ' USDT'}</button>`
+    ? `<button class="btn" onclick="panel('${bal == null ? 'profile' : 'wallet'}')">${bal == null ? 'Mi cuenta' : fmt(bal) + ' USDT'}</button>`
     : `<button class="btn p" onclick="$('#login').showModal()">Entrar</button>`;
 }
 async function loadBal() {
@@ -293,7 +294,7 @@ async function loadBal() {
   paintAuth(session);
 }
 function paintBal() {
-  $('#gbal').textContent = bal == null ? 'Inicia sesión para comprar con tu saldo.' : 'Tu saldo: ' + bal.toFixed(2) + ' USDT';
+  $('#gbal').textContent = bal == null ? 'Inicia sesión para comprar con tu saldo.' : 'Tu saldo: ' + fmt(bal) + ' USDT';
 }
 if (sb) {
   sb.auth.getSession().then(loadBal);
@@ -323,7 +324,7 @@ async function panel(k) {
     await loadBal();
     const { data: dep } = await sb.from('deposits').select('amount,status').order('id', { ascending: false }).limit(5);
     const st = { pending: 'En revisión', approved: 'Acreditado', rejected: 'Rechazado' };
-    box.innerHTML = `Saldo: <b>${(bal || 0).toFixed(2)} USDT</b>
+    box.innerHTML = `Saldo: <b>${fmt((bal || 0))} USDT</b>
       <p style="margin-top:12px">1. Envía USDT por la red <b>BEP20</b> a esta dirección:</p>
       <p style="word-break:break-all;color:var(--ac)">${PAY}</p>
       <p style="margin-top:8px">2. Pega aquí el monto y el hash de la transacción:</p>
@@ -331,7 +332,7 @@ async function panel(k) {
       <label for="dtx">Hash de la transacción (TxID)</label><input id="dtx" placeholder="0x…">
       <div class="row"><button class="btn p" onclick="deposit()">Avisar mi depósito</button></div>
       <div class="msg" id="dmsg"></div>
-      ${(dep || []).map(d => `<p>${Number(d.amount).toFixed(2)} USDT · ${st[d.status]}</p>`).join('')}`;
+      ${(dep || []).map(d => `<p>${fmt(Number(d.amount))} USDT · ${st[d.status]}</p>`).join('')}`;
   } else {
     box.innerHTML = `${session.user.email}<div class="row"><button class="btn" onclick="sb.auth.signOut();$('#panel').close()">Cerrar sesión</button></div>`;
   }
