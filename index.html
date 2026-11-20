@@ -110,6 +110,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
 
 <dialog id="game">
   <h3 id="gt"></h3>
+  <div class="notice" id="gnote" hidden></div>
   <label for="pid">ID de jugador</label><input id="pid" inputmode="numeric" placeholder="Tu ID del juego">
   <div class="notice">Solo aceptamos USDT (red BEP20). Por ahora no aceptamos saldo móvil ni transferencia.</div>
   <div class="msg" id="gbal" style="color:var(--tx);font-weight:700"></div>
@@ -162,7 +163,7 @@ const GAMES = [
   ['blood-strike','Blood Strike','Shooter','#c0392b'],
   ['mobile-legends','Mobile Legends','MOBA','#2e6fdb'],
   ['arena-breakout','Arena Breakout','Shooter','#4a7c59'],
-  ['honor-of-kings','Honor of Kings','MOBA','#d4a017'],
+  ['honor-of-kings','Honor of Kings','MOBA · Global','#d4a017'],
   ['genshin-impact','Genshin Impact','RPG','#7b5cd6'],
   ['roblox','Roblox','Plataforma','#e23c3c']
 ];
@@ -182,7 +183,8 @@ function nextImg(el, s) {
   const i = (+el.dataset.i || 0) + 1, u = urls(s);
   if (i < u.length) { el.dataset.i = i; el.src = u[i]; } else el.remove();
 }
-const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.601], ["105 BC", 0.9657], ["320 BC", 2.4165], ["540 BC", 3.8774], ["1100 BC", 7.5548], ["2260 BC", 14.7987], ["5800 BC", 36.5808]], "honor-of-kings": [["16 Tokens", 0.2], ["80 Tokens", 0.98], ["240 Tokens", 2.94], ["400 Tokens", 4.9], ["560 Tokens", 6.87], ["830 Tokens", 9.8], ["1245 Tokens", 14.71], ["2508 Tokens", 29.43], ["4180 Tokens", 49.05], ["8360 Tokens", 98.09]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.315], ["300 + 30 Cristales Génesis", 5.7302], ["980 + 110 Cristales Génesis", 16.5907], ["1980 + 260 Cristales Génesis", 32.8815], ["3280 + 600 Cristales Génesis", 54.6025], ["6480 + 1600 Cristales Génesis", 108.905], ["Bendición de la Luna Creciente", 5.7302]]};
+const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.601], ["105 BC", 0.9657], ["320 BC", 2.4165], ["540 BC", 3.8774], ["1100 BC", 7.5548], ["2260 BC", 14.7987], ["5800 BC", 36.5808]], "honor-of-kings": [["16 Tokens", 0.3713], ["Bolsa de la Suerte", 0.5123], ["Paquete de Honor", 0.5123], ["Standard Purchase Rebate Pack", 0.5123], ["80 Tokens", 1.0463], ["Tarjeta Semanal", 1.1269], ["Reembolso Premium", 1.3485], ["240 Tokens", 2.7288], ["Tarjeta Semanal Plus", 3.021], ["400 Tokens", 4.4214], ["560 Tokens", 6.114], ["830 Tokens", 8.6429], ["1245 Tokens", 12.8643], ["2508 Tokens", 25.5386], ["4180 Tokens", 42.4344], ["8360 Tokens", 84.6688]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.315], ["300 + 30 Cristales Génesis", 5.7302], ["980 + 110 Cristales Génesis", 16.5907], ["1980 + 260 Cristales Génesis", 32.8815], ["3280 + 600 Cristales Génesis", 54.6025], ["6480 + 1600 Cristales Génesis", 108.905], ["Bendición de la Luna Creciente", 5.7302]]};
+const NOTES = { 'honor-of-kings': 'Las recargas de Honor of Kings son de la región Global.' };
 const DEMO = ['Paquete 1','Paquete 2','Paquete 3','Paquete 4'].map(name => ({ id: null, name }));
 
 $('#games').innerHTML = GAMES.map(g =>
@@ -201,6 +203,7 @@ async function openGame(slug) {
     if (data && data.length) pkgs = data;
   }
   $('#gt').textContent = 'Recargar ' + cur[1];
+  $('#gnote').textContent = NOTES[slug] || ''; $('#gnote').hidden = !NOTES[slug];
   $('#pid').value = ''; $('#gmsg').textContent = '';
   paintBal(); loadBal().then(paintBal);
   drawPk(); $('#game').showModal();
