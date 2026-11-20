@@ -6,7 +6,7 @@
 <title>VORKASTORE | Recargas de juegos 24/7</title>
 <meta name="description" content="Recargas de Free Fire, Mobile Legends y más juegos. Paga en USDT.">
 <meta name="theme-color" content="#0a0a0b">
-<link rel="icon" href="logo.png">
+<link rel="icon" href="logo.png.jpeg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="VORKASTORE">
@@ -74,7 +74,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
 </head>
 <body>
 <header><div class="wrap bar">
-  <a class="brand" href="#"><img src="logo.png" alt="VORKA"><span>VORKA<b>STORE</b></span></a>
+  <a class="brand" href="#"><img src="logo.png.jpeg" alt="VORKA"><span>VORKA<b>STORE</b></span></a>
   <nav class="top"><a href="#juegos">Juegos</a><a href="#nosotros">Nosotros</a></nav>
   <div class="sp"></div><span id="auth"></span>
 </div></header>
@@ -162,7 +162,6 @@ const GAMES = [
   ['arena-breakout','Arena Breakout','Shooter','#4a7c59'],
   ['honor-of-kings','Honor of Kings','MOBA','#d4a017'],
   ['genshin-impact','Genshin Impact','RPG','#7b5cd6'],
-  ['wuthering-waves','Wuthering Waves','RPG','#1fa6b8'],
   ['roblox','Roblox','Plataforma','#e23c3c']
 ];
 // Imágenes: prueba varios nombres y extensiones hasta encontrar el archivo
@@ -172,9 +171,8 @@ const IMG = {
   'blood-strike':['bloodstrike'],
   'mobile-legends':['mobilelegends'],
   'arena-breakout':['arenabreakout'],
-  'honor-of-kings':['honorofkings','honor','hok','honor-of-kings'],
+  'honor-of-kings':['honorfkings','honorofkings','honor','hok'],
   'genshin-impact':['genshinimpact','genshin','genshin-impact'],
-  'wuthering-waves':['wutheringwaves','wuthering','ww','wuthering-waves'],
   'roblox':['roblox']
 };
 const urls = s => IMG[s].flatMap(n => EXT.map(e => n + e));
