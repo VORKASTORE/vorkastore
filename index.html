@@ -345,5 +345,203 @@ async function panel(k) {
   if (!$('#panel').open) $('#panel').showModal();
 }
 </script>
+<script>
+/* VORKASTORE · Billetera + depósito USDT (estilo capturas) */
+(() => {
+const GR = '#5fcf8f';
+const css = `
+:root{--gr:${GR}}
+.vw{position:fixed;inset:0;z-index:50;overflow:auto;background:radial-gradient(520px 380px at 50% -6%,#ff5a1f30,transparent 70%),#08080a;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.vw.g{background:radial-gradient(520px 380px at 50% -6%,#5fcf8f26,transparent 70%),#07100d}
+.vi{max-width:480px;margin:0 auto;padding:16px 16px 36px;text-align:center}
+.vt{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.vt small{display:block;color:var(--ac);font-weight:800;letter-spacing:.3em;font-size:11px}
+.vt h2{margin:2px 0;font-size:30px;line-height:1}
+.vb{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:#111113;color:var(--tx);font:800 20px Montserrat;display:grid;place-items:center;cursor:pointer}
+.vb.d{border-color:#1f4a3a;background:#0d1a14;color:var(--gr);cursor:default}
+.vc{border:1px solid var(--line);border-radius:24px;padding:20px;background:#111113;margin-top:14px;text-align:left}
+.vc.o{border-color:#6b2c20;background:linear-gradient(160deg,#2b1210,#0c0c0e 65%);padding:24px}
+.vc.g{border-color:#1f4a3a;background:#0b1511}
+.vk{font-size:11px;font-weight:800;letter-spacing:.22em;color:var(--mu);text-transform:uppercase}
+.vk.a{color:var(--ac)}.vk.g{color:var(--gr)}.vk.w{color:var(--tx);font-size:14px;letter-spacing:.08em}
+.vbig{font-size:54px;font-weight:800;line-height:1.1;margin:14px 0}
+.vbig b{color:var(--ac);margin-right:8px}
+.wic{flex:none;width:58px;height:58px;border-radius:18px;background:linear-gradient(160deg,#ff6b3a,#b8300f);display:grid;place-items:center;font-size:28px}
+.vq{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.va{padding:16px;border:1px solid var(--line);border-radius:22px;background:#111113;text-align:left;color:var(--tx);font:inherit;cursor:pointer;min-height:150px}
+.va.o{border-color:#6b2c20}
+.va i{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#2b1210;color:var(--ac);font:normal 800 24px Montserrat;margin-bottom:18px}
+.va.b i{background:#161a2b;color:#7f9cf5}
+.va b{display:block;font-size:16px}
+.va span{color:var(--mu);font-size:13px}
+.vf{display:block;width:100%;margin-top:12px;padding:17px;border-radius:18px;border:1px solid var(--line);background:#111113;color:var(--tx);font:800 14px Montserrat;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.vf.g{background:linear-gradient(180deg,#62cf7c,#3a8a4c);border-color:#7fe097;color:#05200e}
+.vf.t{color:var(--gr);border-color:#1f4a3a;background:#0b1511}
+.vf:disabled{opacity:.6}
+.vm{display:flex;align-items:center;gap:16px;width:100%;margin-top:12px;padding:16px;border:1px solid #1f5a42;border-radius:22px;background:#0d1a14;color:var(--tx);font:inherit;text-align:left;cursor:pointer}
+.vm b{display:block;font-size:17px}.vm span{color:var(--mu);font-size:14px}
+.vm em{display:block;margin-top:6px;font:800 12px Montserrat;font-style:normal;letter-spacing:.14em;color:var(--gr)}
+.vm u{margin-left:auto;font-size:26px;color:var(--gr);text-decoration:none}
+.vu{flex:none;width:56px;height:56px;border-radius:50%;background:#26a17b;color:#fff;display:grid;place-items:center;font:800 30px Montserrat}
+.vu.s{width:88px;height:88px;font-size:48px;margin:6px auto 12px}
+.vh{font-size:clamp(26px,8vw,34px);font-weight:800;line-height:1.1;margin:6px 0 10px}
+.vh span{color:var(--gr)}
+.vp{color:var(--mu);font-size:14px;margin:0 0 4px}
+.vin{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-top:14px;border:1px solid #1f5a42;border-radius:20px;background:#050806}
+.vin input{flex:1;width:auto;min-width:0;border:0;border-radius:0;background:none;font:800 22px Montserrat;padding:6px 0;color:var(--tx)}
+.vin input:focus{outline:0}
+.vtag{flex:none;padding:8px 14px;border-radius:12px;background:#10241b;color:var(--gr);font:800 13px Montserrat;letter-spacing:.1em}
+.vr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:18px;border:1px solid #1f4a3a;border-radius:20px;background:#0d1a14}
+.vr b{font-size:34px;color:var(--gr)}
+.vtm{display:inline-flex;gap:10px;align-items:center;padding:12px 18px;border:1px solid #1f4a3a;border-radius:16px;background:#0d1a14;font-weight:700}
+.vtm b{color:var(--gr);font-size:20px}
+.vl{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;margin-top:10px;border:1px solid #1f4a3a;border-radius:14px;background:#0b1511;font-size:12px;text-align:left}
+.vl b{color:var(--gr);text-align:right}
+.vad{word-break:break-all;padding:16px;border-radius:16px;background:#050806;border:1px solid #1f4a3a;font-size:14px;text-align:center;margin-top:10px}
+.vqr{width:min(100%,260px);margin:12px auto 0;padding:10px;border-radius:18px;background:#fff;border:4px solid #b5e3cf}
+.vqr svg{display:block;width:100%;height:auto}
+.vs{display:inline-grid;place-items:center;width:34px;height:34px;margin-right:8px;border-radius:10px;border:1px solid #1f4a3a;color:var(--gr);font-weight:800;vertical-align:middle}
+.vmsg{min-height:18px;margin-top:12px;font-size:13px;color:var(--mu);text-align:center}
+.vrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+`;
+document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
+document.body.insertAdjacentHTML('beforeend', '<div class="vw" id="vw" hidden><div class="vi" id="vi"></div></div>');
+// Librería del QR (versión fija). Si no carga, se muestra solo la dirección.
+const sc = document.createElement('script');
+sc.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+document.head.append(sc);
+
+const $$ = id => document.getElementById(id);
+const vw = $$('vw'), vi = $$('vi');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const num = v => { const x = parseFloat(String(v).replace(',', '.')); return x > 0 ? x.toFixed(2) : '0.00'; };
+let amt = '', ref = '', tick = null, left = 600;
+
+const show = () => { vw.hidden = false; document.body.style.overflow = 'hidden'; };
+const hide = () => { clearInterval(tick); vw.hidden = true; document.body.style.overflow = ''; };
+const view = (html, green) => { vw.classList.toggle('g', !!green); vi.innerHTML = html; vw.scrollTop = 0; };
+
+const qr = t => {
+  if (!window.qrcode) return '';
+  const q = window.qrcode(0, 'M'); q.addData(t); q.make();
+  const c = q.getModuleCount(); let d = '';
+  for (let r = 0; r < c; r++) for (let k = 0; k < c; k++) if (q.isDark(r, k)) d += `M${k} ${r}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${c} ${c}" shape-rendering="crispEdges"><path d="${d}"/></svg>`;
+};
+
+/* ---------- Pantalla 1: Mi billetera ---------- */
+async function wallet(note) {
+  if (!sb) return _panel('wallet');
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('#login').showModal(); return; }
+  await loadBal();
+  show();
+  view(`<div class="vt"><button class="vb" onclick="VK.x()">←</button><div><small>VORKASTORE</small><h2>MI</h2><small>BILLETERA</small></div><span style="font-size:34px;width:46px">💰</span></div>
+<div class="vc o"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="vk">Balance disponible</div><div class="vk g" style="margin-top:14px">● Cuenta activa</div></div><div class="wic">👛</div></div>
+<div class="vbig"><b>$</b>${fmt(bal || 0)}</div>
+<div style="border-top:1px solid var(--line);padding-top:16px"><div class="vk">Cuenta VORKASTORE</div><div style="font-weight:700;margin-top:6px;word-break:break-all">${esc(session.user.email)}</div></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin:26px 2px 0"><span class="vk w">Acciones rápidas</span><span class="vk">Gestiona tu billetera</span></div>
+<div class="vq"><button class="va o" onclick="VK.m()"><i>+</i><b>DEPOSITAR</b><span>Ingresar balance</span></button><button class="va b" onclick="VK.h()"><i>≣</i><b>MOVIMIENTOS</b><span>Consultar historial</span></button></div>
+<div class="vc" style="display:flex;gap:14px;align-items:center"><span style="font-size:34px">🛡️</span><div><div class="vk a" style="font-size:14px;letter-spacing:.04em">TU DINERO ESTÁ PROTEGIDO</div><p class="vp" style="margin-top:6px">Tu balance está vinculado exclusivamente a tu cuenta de VORKASTORE.</p></div></div>
+<div class="vmsg" style="color:var(--gr)">${note || ''}</div>
+<button class="vf" onclick="VK.x()">← Volver a la tienda</button>`);
+}
+
+/* ---------- Pantalla 2: método de pago ---------- */
+const methods = () => { clearInterval(tick); view(`<div class="vt"><div class="vb d">+</div></div>
+<div class="vk g" style="text-align:left">Ingresar fondos</div>
+<div class="vh" style="text-align:left;margin-top:14px">SELECCIONE SU<br><span>MÉTODO DE PAGO</span></div>
+<p class="vp" style="text-align:left">Elige cómo deseas ingresar balance a tu billetera de VORKASTORE.</p>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:26px"><span class="vk w">Métodos disponibles</span><span class="vk">01 opción</span></div>
+<button class="vm" onclick="VK.a()"><span class="vu">₮</span><div><b>USDT BEP20</b><span>BNB Smart Chain</span><em>● DISPONIBLE</em></div><u>→</u></button>
+<div class="vc g" style="margin-top:22px"><div class="vk g" style="font-size:14px;letter-spacing:.04em">PAGOS PROTEGIDOS</div><p class="vp" style="margin-top:6px">Selecciona un método y sigue las instrucciones para ingresar balance a tu cuenta. Por ahora no aceptamos saldo móvil ni transferencia.</p></div>
+<button class="vf t" onclick="VK.w()">← Regresar a mi billetera</button>`, 1); };
+
+/* ---------- Pantalla 3: cantidad ---------- */
+const amount = () => { clearInterval(tick); view(`<div class="vu s">₮</div>
+<div class="vh" style="font-size:30px">INGRESAR BALANCE</div>
+<p class="vp">Introduce la cantidad de USDT que deseas depositar.</p>
+<div class="vl" style="margin-top:14px"><span class="vk">Tasa de cambio</span><b>1 USDT = 1 BALANCE</b></div>
+<p class="vp" style="margin-top:8px">Tu depósito se convierte automáticamente · USDT (BEP20)</p>
+<div class="vc g"><div style="display:flex;align-items:center;gap:12px"><span class="vs">01</span><div style="flex:1"><div class="vk w">Cantidad a enviar</div><p class="vp">Introduce el monto de tu depósito</p></div><span class="vtag">BEP20</span></div>
+<div class="vin"><span class="vu" style="width:44px;height:44px;font-size:22px">₮</span><input id="vam" inputmode="decimal" placeholder="10" value="${esc(amt)}" oninput="VK.i(this.value)"><span class="vtag">USDT</span></div>
+<p class="vp" style="margin-top:12px;text-align:center">Introduce la cantidad exacta que enviarás desde tu billetera.</p>
+<div class="vr"><div><div class="vk w">Recibirás en tu balance</div><p class="vp">Conversión estimada</p></div><div style="text-align:right"><b id="vrc">${num(amt)}</b><div class="vk g">Balance</div></div></div></div>
+<div class="vmsg" id="vmsg"></div>
+<button class="vf g" onclick="VK.p()">Continuar →</button><button class="vf" onclick="VK.w()">Cancelar</button>`, 1); };
+
+/* ---------- Pantalla 4: pagar ---------- */
+const pay = () => {
+  view(`<div class="vu s">₮</div><div class="vk w" style="font-size:16px">Pagar con</div><div class="vh" style="font-size:30px">DEPÓSITO USDT</div>
+<div class="vtm">⏱ TIEMPO RESTANTE <b id="vtm">10:00</b></div>
+<div class="vc g" style="text-align:center"><div class="vk">Monto a enviar</div><div class="vbig" style="font-size:44px;margin:8px 0"><span style="color:var(--gr)">${esc(amt)}</span> <small style="font-size:18px;color:var(--gr)">USDT</small></div><button class="vf t" style="margin-top:0" onclick="VK.c('${esc(amt)}',this)">Copiar monto</button></div>
+<div class="vl"><span class="vk">Red de pago</span><b>USDT (BEP20)</b></div>
+<div class="vl"><span class="vk">Referencia del pedido</span><b>${ref}</b></div>
+<div class="vc g"><span class="vs">01</span><b>DIRECCIÓN DE PAGO</b><p class="vp" style="margin-top:6px">Envía el monto a esta dirección</p><div class="vad">${PAY}</div><button class="vf g" onclick="VK.c('${PAY}',this)">Copiar</button></div>
+<div class="vc g"><span class="vs">02</span><b>CÓDIGO QR</b><p class="vp" style="margin-top:6px">Escanea para realizar el pago</p><div class="vqr" id="vqr"></div></div>
+<div class="vc g"><span class="vs">03</span><b>CONFIRMA TU PAGO</b><p class="vp" style="margin-top:6px">Cuando envíes, pega el hash de la transacción (TxID). Si el tiempo termina y ya enviaste, pégalo igual.</p><div class="vin"><input id="vtx" placeholder="0x…" style="font-size:15px"></div><div class="vmsg" id="vmsg"></div><button class="vf g" id="vgo" onclick="VK.s()">Ya pagué</button></div>
+<p class="vp" style="margin-top:14px">Envía solo USDT por la red BEP20. Con otra red pierdes los fondos.</p>
+<button class="vf" onclick="VK.w()">Cancelar</button>`, 1);
+  const box = $$('vqr'), svg = qr(PAY);
+  if (svg) box.innerHTML = svg; else box.outerHTML = '<p class="vp" style="margin-top:12px">QR no disponible. Usa la dirección de arriba.</p>';
+  clearInterval(tick);
+  tick = setInterval(() => {
+    const t = $$('vtm');
+    if (!t) return clearInterval(tick);
+    left--;
+    t.textContent = left > 0 ? `${String(left / 60 | 0).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}` : 'EXPIRADO';
+    if (left <= 0) clearInterval(tick);
+  }, 1000);
+};
+
+/* ---------- Acciones ---------- */
+const VK = window.VK = {
+  x: hide, w: () => wallet(), m: methods, a: amount,
+  i: v => { amt = v; $$('vrc').textContent = num(v); },
+  p: () => {
+    const x = parseFloat(String(amt).replace(',', '.'));
+    if (!(x >= 1)) { $$('vmsg').textContent = 'Escribe un monto válido (mínimo 1 USDT).'; return; }
+    amt = String(x); left = 600;
+    ref = 'DEP-' + String(Math.floor(Math.random() * 1e8)).padStart(8, '0');
+    pay();
+  },
+  c: async (t, b) => {
+    const o = b.textContent;
+    try { await navigator.clipboard.writeText(t); b.textContent = 'Copiado ✓'; } catch { b.textContent = 'Copia manualmente'; }
+    setTimeout(() => b.textContent = o, 1600);
+  },
+  s: async () => {
+    const m = $$('vmsg'), tx = $$('vtx').value.trim(), b = $$('vgo');
+    if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { m.textContent = 'El hash empieza por 0x y tiene 66 caracteres. Cópialo completo.'; return; }
+    b.disabled = true; m.textContent = 'Enviando…';
+    const { error } = await sb.from('deposits').insert({ amount: parseFloat(amt), txhash: tx });
+    if (error) {
+      b.disabled = false;
+      m.textContent = /duplicate|unique/i.test(error.message) ? 'Ese hash ya fue registrado.' : 'No se pudo enviar: ' + error.message;
+      return;
+    }
+    amt = '';
+    wallet('Depósito enviado. Lo acreditamos en cuanto lo confirmemos en la red.');
+  },
+  h: async () => {
+    const [d, o] = await Promise.all([
+      sb.from('deposits').select('amount,status').order('id', { ascending: false }).limit(10),
+      sb.from('orders').select('id,game_slug,amount,status').order('id', { ascending: false }).limit(10)
+    ]);
+    const st = { pending: 'En revisión', approved: 'Acreditado', rejected: 'Rechazado' };
+    const rows = a => a.join('') || '<p class="vp" style="margin-top:8px">Sin movimientos.</p>';
+    view(`<div class="vt"><button class="vb" onclick="VK.w()">←</button><div><small>VORKASTORE</small><h2>MOVIMIENTOS</h2></div><span style="width:46px"></span></div>
+<div class="vc"><div class="vk a">Depósitos</div>${rows((d.data || []).map(x => `<div class="vrow"><span>+${fmt(x.amount)} USDT</span><b>${st[x.status] || esc(x.status)}</b></div>`))}</div>
+<div class="vc"><div class="vk a">Pedidos</div>${rows((o.data || []).map(x => `<div class="vrow"><span>#${x.id} · ${esc(x.game_slug)}</span><b>${fmt(x.amount)} · ${esc(x.status)}</b></div>`))}</div>
+<button class="vf" onclick="VK.w()">← Volver a la billetera</button>`);
+  }
+};
+
+/* El botón Wallet, el saldo del encabezado y "Recargar saldo" ahora abren esta billetera */
+const _panel = window.panel;
+window.panel = k => k === 'wallet' ? wallet() : _panel(k);
+})();
+
+</script>
 </body>
 </html>
