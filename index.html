@@ -7,16 +7,21 @@
 <meta name="description" content="Recargas de Free Fire, Mobile Legends y más juegos. Paga en USDT.">
 <meta name="theme-color" content="#0a0a0b">
 <link rel="icon" href="logo.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VORKASTORE">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0a0a0b;--card:#141416;--line:#26262a;--ac:#ff5a1f;--tx:#f4f4f5;--mu:#9a9aa2;--r:16px}
 *{box-sizing:border-box;margin:0}
 html{scroll-behavior:smooth}
 body{font:500 15px/1.5 Montserrat,system-ui,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:76px}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(620px 440px at 88% -4%,#ff5a1f42,transparent 70%),radial-gradient(520px 520px at -5% 55%,#7b5cd62e,transparent 70%),radial-gradient(520px 420px at 105% 100%,#1fa6b826,transparent 70%),radial-gradient(#ffffff15 1px,transparent 1px) 0 0/22px 22px}
 a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
-header{position:sticky;top:0;z-index:10;background:rgba(10,10,11,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:0;z-index:10;background:rgba(10,10,11,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:16px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
 .brand img{width:36px;height:36px}
@@ -34,8 +39,11 @@ h2{font-size:20px;font-weight:800;margin:30px 0 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .tile{position:relative;aspect-ratio:1;border-radius:var(--r);padding:14px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;border:1px solid var(--line);cursor:pointer;background:linear-gradient(160deg,var(--c1),#101012 75%)}
 .tile i{position:absolute;top:8px;left:14px;font:800 48px/1 Montserrat;opacity:.2}
-.tile em{position:absolute;top:10px;right:10px;font:700 11px Montserrat;font-style:normal;background:#000b;padding:3px 9px;border-radius:99px}
-.tile b{font-size:15px}.tile span{font-size:12px;color:var(--mu)}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,#000000d9 0%,#0000 58%)}
+.tile em{position:absolute;top:10px;right:10px;z-index:2;font:700 11px Montserrat;font-style:normal;background:#000b;padding:3px 9px;border-radius:99px}
+.tile b,.tile span{position:relative;z-index:2}
+.tile b{font-size:15px}.tile span{font-size:12px;color:#c9c9cf}
 .tile.out{opacity:.55;cursor:not-allowed}
 .feat{display:grid;gap:12px;margin-top:32px}
 @media(min-width:700px){.feat{grid-template-columns:repeat(3,1fr)}}
@@ -67,7 +75,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
 <body>
 <header><div class="wrap bar">
   <a class="brand" href="#"><img src="logo.png" alt="VORKA"><span>VORKA<b>STORE</b></span></a>
-  <nav class="top"><a href="#juegos">Juegos</a><a href="#gift">Gift Cards</a><a href="#nosotros">Nosotros</a></nav>
+  <nav class="top"><a href="#juegos">Juegos</a><a href="#nosotros">Nosotros</a></nav>
   <div class="sp"></div><span id="auth"></span>
 </div></header>
 
@@ -82,9 +90,6 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
 
   <h2 id="juegos">Elige tu juego</h2>
   <div class="grid" id="games"></div>
-
-  <h2 id="gift">Gift Cards</h2>
-  <div class="grid" id="gifts"></div>
 
   <section class="feat">
     <div><b>Entrega rápida</b><p>Con tu pago confirmado, la recarga llega a tu cuenta de juego.</p></div>
@@ -158,16 +163,23 @@ const GAMES = [
   ['honor-of-kings','Honor of Kings','MOBA','#d4a017'],
   ['genshin-impact','Genshin Impact','RPG','#7b5cd6'],
   ['wuthering-waves','Wuthering Waves','RPG','#1fa6b8'],
-  ['roblox','Roblox','Plataforma','#e23c3c',true]
+  ['roblox','Roblox','Plataforma','#e23c3c']
 ];
-const GIFTS = [['Xbox','#2e8b2e'],['PlayStation','#2456c4'],['Apple','#8a8a92'],['Nintendo','#e60012']];
+// Imágenes: el nombre debe ser idéntico al archivo en GitHub
+const IMG = {
+  'free-fire':'freefire.jpg.jpeg',
+  'blood-strike':'bloodstrike.jpg.jpeg',
+  'mobile-legends':'mobilelegends.jpg.jpeg',
+  'arena-breakout':'arenabreakout.jpg.jpeg',
+  'honor-of-kings':'honorofkings.jpg.jpeg',
+  'genshin-impact':'genshinimpact.jpg.jpeg',
+  'roblox':'roblox.jpg.jpeg'
+};
 const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.47], ["105 BC", 0.83], ["320 BC", 2.61], ["540 BC", 4.28], ["1100 BC", 8.69], ["2260 BC", 17.28], ["5800 BC", 43.03]], "honor-of-kings": [["16 Tokens", 0.2], ["80 Tokens", 0.98], ["240 Tokens", 2.94], ["400 Tokens", 4.9], ["560 Tokens", 6.87], ["830 Tokens", 9.8], ["1245 Tokens", 14.71], ["2508 Tokens", 29.43], ["4180 Tokens", 49.05], ["8360 Tokens", 98.09]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.17], ["300 + 30 Cristales Génesis", 5.84], ["980 + 110 Cristales Génesis", 17.49], ["1980 + 260 Cristales Génesis", 34.98], ["3280 + 600 Cristales Génesis", 58.29], ["6480 + 1600 Cristales Génesis", 116.57]]};
 const DEMO = ['Paquete 1','Paquete 2','Paquete 3','Paquete 4'].map(name => ({ id: null, name }));
 
 $('#games').innerHTML = GAMES.map(g =>
-  `<a class="tile ${g[4]?'out':''}" style="--c1:${g[3]}66" onclick="openGame('${g[0]}')"><i>${g[1][0]}</i>${g[4]?'<em>Agotado</em>':''}<b>${g[1]}</b><span>${g[2]}</span></a>`).join('');
-$('#gifts').innerHTML = GIFTS.map(g =>
-  `<a class="tile" style="--c1:${g[1]}66" href="${WHATSAPP}" target="_blank" rel="noopener"><i>${g[0][0]}</i><b>${g[0]}</b><span>Pedir por WhatsApp</span></a>`).join('');
+  `<a class="tile ${g[4]?'out':''}" style="--c1:${g[3]}66" onclick="openGame('${g[0]}')"><i>${g[1][0]}</i>${IMG[g[0]]?`<img src="${IMG[g[0]]}" alt="" loading="lazy" onerror="this.remove()">`:''}${g[4]?'<em>Agotado</em>':''}<b>${g[1]}</b><span>${g[2]}</span></a>`).join('');
 
 let cur, pkgs = DEMO, sel = null;
 
