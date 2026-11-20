@@ -112,6 +112,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
   <h3 id="gt"></h3>
   <label for="pid">ID de jugador</label><input id="pid" inputmode="numeric" placeholder="Tu ID del juego">
   <div class="notice">Solo aceptamos USDT (red BEP20). Por ahora no aceptamos saldo móvil ni transferencia.</div>
+  <div class="msg" id="gbal" style="color:var(--tx);font-weight:700"></div>
   <label>Paquete</label><div class="pk" id="pk"></div>
   <div class="msg" id="gmsg"></div>
   <div class="row"><button class="btn" onclick="this.closest('dialog').close()">Cerrar</button><button class="btn p" onclick="order()">Crear pedido</button></div>
@@ -186,7 +187,7 @@ const DEMO = ['Paquete 1','Paquete 2','Paquete 3','Paquete 4'].map(name => ({ id
 $('#games').innerHTML = GAMES.map(g =>
   `<a class="tile ${g[4]?'out':''}" style="--c1:${g[3]}66" onclick="openGame('${g[0]}')"><i>${g[1][0]}</i><img src="${urls(g[0])[0]}" alt="" onerror="nextImg(this,'${g[0]}')">${g[4]?'<em>Agotado</em>':''}<b>${g[1]}</b><span>${g[2]}</span></a>`).join('');
 
-let cur, pkgs = DEMO, sel = null;
+let cur, pkgs = DEMO, sel = null, bal = null, busy = false;
 
 async function openGame(slug) {
   cur = GAMES.find(g => g[0] === slug);
@@ -200,6 +201,7 @@ async function openGame(slug) {
   }
   $('#gt').textContent = 'Recargar ' + cur[1];
   $('#pid').value = ''; $('#gmsg').textContent = '';
+  paintBal(); loadBal().then(paintBal);
   drawPk(); $('#game').showModal();
 }
 
@@ -220,9 +222,17 @@ async function order() {
   if (!session) { $('#game').close(); $('#login').showModal(); return; }
   const p = pkgs[sel];
   if (!p.id) { msg.textContent = 'Ejecuta precios.sql en Supabase para activar los pedidos.'; return; }
-  const { data, error } = await sb.from('orders').insert({ game_slug: cur[0], package_id: p.id, player_id: pid }).select().single();
-  if (error) { msg.textContent = 'No se pudo crear el pedido: ' + error.message; return; }
-  msg.innerHTML = `Pedido #${data.id} creado. Paga <b>${Number(data.amount).toFixed(2)} USDT</b> (red BEP20) a <b>${PAY}</b> y escríbenos por <a href="${WHATSAPP}" target="_blank" rel="noopener" style="color:var(--ac)">WhatsApp</a> con tu número de pedido.`;
+  if (busy) return;
+  busy = true; msg.textContent = 'Procesando…';
+  const { data, error } = await sb.rpc('place_order', { p_game: cur[0], p_package: String(p.id), p_player: pid });
+  busy = false;
+  if (error) {
+    if (/Saldo insuficiente/.test(error.message)) msg.innerHTML = `Saldo insuficiente. <a style="color:var(--ac)" onclick="$('#game').close();panel('wallet')">Recargar saldo</a>`;
+    else msg.textContent = 'No se pudo crear el pedido: ' + error.message;
+    return;
+  }
+  bal = Number(data.balance); paintAuth(true); paintBal();
+  msg.innerHTML = `Pedido #${data.order_id} pagado con tu saldo (<b>${Number(data.amount).toFixed(2)} USDT</b>). Te quedan <b>${bal.toFixed(2)} USDT</b>. Si tarda la entrega, escríbenos por <a href="${WHATSAPP}" target="_blank" rel="noopener" style="color:var(--ac)">WhatsApp</a> con tu número de pedido.`;
 }
 
 async function auth(kind) {
@@ -271,13 +281,34 @@ async function resetStep() {
 
 function paintAuth(s) {
   $('#auth').innerHTML = s
-    ? `<button class="btn" onclick="panel('profile')">Mi cuenta</button>`
+    ? `<button class="btn" onclick="panel('${bal == null ? 'profile' : 'wallet'}')">${bal == null ? 'Mi cuenta' : bal.toFixed(2) + ' USDT'}</button>`
     : `<button class="btn p" onclick="$('#login').showModal()">Entrar</button>`;
 }
+async function loadBal() {
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { bal = null; paintAuth(null); return; }
+  const { data } = await sb.from('wallets').select('balance').maybeSingle();
+  bal = data ? Number(data.balance) : 0;
+  paintAuth(session);
+}
+function paintBal() {
+  $('#gbal').textContent = bal == null ? 'Inicia sesión para comprar con tu saldo.' : 'Tu saldo: ' + bal.toFixed(2) + ' USDT';
+}
 if (sb) {
-  sb.auth.getSession().then(({ data }) => paintAuth(data.session));
-  sb.auth.onAuthStateChange((_, s) => paintAuth(s));
+  sb.auth.getSession().then(loadBal);
+  sb.auth.onAuthStateChange(() => setTimeout(loadBal, 0));
 } else paintAuth(null);
+
+async function deposit() {
+  const m = $('#dmsg'), amount = parseFloat($('#dam').value.replace(',', '.')), tx = $('#dtx').value.trim();
+  if (!(amount >= 1)) { m.textContent = 'Escribe el monto enviado (mínimo 1 USDT).'; return; }
+  if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { m.textContent = 'El hash empieza por 0x y tiene 66 caracteres. Cópialo completo.'; return; }
+  const { error } = await sb.from('deposits').insert({ amount, txhash: tx });
+  if (error) { m.textContent = /duplicate|unique/i.test(error.message) ? 'Ese hash ya fue registrado.' : 'No se pudo enviar: ' + error.message; return; }
+  await panel('wallet');
+  $('#dmsg').textContent = 'Depósito enviado. Lo acreditamos en cuanto lo confirmemos en la red.';
+}
 
 async function panel(k) {
   const box = $('#pbody'), t = $('#pt');
@@ -289,12 +320,22 @@ async function panel(k) {
     const { data } = await sb.from('orders').select('*').order('id', { ascending: false }).limit(20);
     box.innerHTML = (data || []).map(o => `<p>#${o.id} · ${o.game_slug} · ${o.amount} · <b>${o.status}</b></p>`).join('') || 'Aún no tienes órdenes.';
   } else if (k === 'wallet') {
-    const { data } = await sb.from('profiles').select('balance').single();
-    box.textContent = 'Saldo: ' + (data ? data.balance : 0);
+    await loadBal();
+    const { data: dep } = await sb.from('deposits').select('amount,status').order('id', { ascending: false }).limit(5);
+    const st = { pending: 'En revisión', approved: 'Acreditado', rejected: 'Rechazado' };
+    box.innerHTML = `Saldo: <b>${(bal || 0).toFixed(2)} USDT</b>
+      <p style="margin-top:12px">1. Envía USDT por la red <b>BEP20</b> a esta dirección:</p>
+      <p style="word-break:break-all;color:var(--ac)">${PAY}</p>
+      <p style="margin-top:8px">2. Pega aquí el monto y el hash de la transacción:</p>
+      <label for="dam">Monto enviado (USDT)</label><input id="dam" inputmode="decimal" placeholder="10">
+      <label for="dtx">Hash de la transacción (TxID)</label><input id="dtx" placeholder="0x…">
+      <div class="row"><button class="btn p" onclick="deposit()">Avisar mi depósito</button></div>
+      <div class="msg" id="dmsg"></div>
+      ${(dep || []).map(d => `<p>${Number(d.amount).toFixed(2)} USDT · ${st[d.status]}</p>`).join('')}`;
   } else {
     box.innerHTML = `${session.user.email}<div class="row"><button class="btn" onclick="sb.auth.signOut();$('#panel').close()">Cerrar sesión</button></div>`;
   }
-  $('#panel').showModal();
+  if (!$('#panel').open) $('#panel').showModal();
 }
 </script>
 </body>
