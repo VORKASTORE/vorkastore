@@ -24,7 +24,7 @@ a{color:inherit;text-decoration:none}
 header{position:sticky;top:0;z-index:10;background:rgba(10,10,11,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:16px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
-.brand img{width:36px;height:36px}
+.brand img{width:36px;height:36px;border-radius:50%}
 .brand b{color:var(--ac)}
 nav.top{display:flex;gap:18px;margin-left:12px;color:var(--mu)}
 nav.top a:hover{color:var(--tx)}
@@ -165,21 +165,28 @@ const GAMES = [
   ['wuthering-waves','Wuthering Waves','RPG','#1fa6b8'],
   ['roblox','Roblox','Plataforma','#e23c3c']
 ];
-// Imágenes: el nombre debe ser idéntico al archivo en GitHub
+// Imágenes: prueba varios nombres y extensiones hasta encontrar el archivo
+const EXT = ['.jpg.jpeg','.jpg.jepg','.jpeg','.jpg','.png'];
 const IMG = {
-  'free-fire':'freefire.jpg.jpeg',
-  'blood-strike':'bloodstrike.jpg.jpeg',
-  'mobile-legends':'mobilelegends.jpg.jpeg',
-  'arena-breakout':'arenabreakout.jpg.jpeg',
-  'honor-of-kings':'honorofkings.jpg.jpeg',
-  'genshin-impact':'genshinimpact.jpg.jpeg',
-  'roblox':'roblox.jpg.jpeg'
+  'free-fire':['freefire'],
+  'blood-strike':['bloodstrike'],
+  'mobile-legends':['mobilelegends'],
+  'arena-breakout':['arenabreakout'],
+  'honor-of-kings':['honorofkings','honor','hok','honor-of-kings'],
+  'genshin-impact':['genshinimpact','genshin','genshin-impact'],
+  'wuthering-waves':['wutheringwaves','wuthering','ww','wuthering-waves'],
+  'roblox':['roblox']
 };
+const urls = s => IMG[s].flatMap(n => EXT.map(e => n + e));
+function nextImg(el, s) {
+  const i = (+el.dataset.i || 0) + 1, u = urls(s);
+  if (i < u.length) { el.dataset.i = i; el.src = u[i]; } else el.remove();
+}
 const PRICES = {"free-fire": [["110 Diamantes", 0.78], ["341 Diamantes", 2.34], ["572 Diamantes", 3.96], ["1166 Diamantes", 7.36], ["2398 Diamantes", 14.6], ["6160 Diamantes", 36.85]], "blood-strike": [["51 BC", 0.47], ["105 BC", 0.83], ["320 BC", 2.61], ["540 BC", 4.28], ["1100 BC", 8.69], ["2260 BC", 17.28], ["5800 BC", 43.03]], "honor-of-kings": [["16 Tokens", 0.2], ["80 Tokens", 0.98], ["240 Tokens", 2.94], ["400 Tokens", 4.9], ["560 Tokens", 6.87], ["830 Tokens", 9.8], ["1245 Tokens", 14.71], ["2508 Tokens", 29.43], ["4180 Tokens", 49.05], ["8360 Tokens", 98.09]], "arena-breakout": [["66 Bonos", 0.92], ["335 Bonos", 4.63], ["675 Bonos", 9.29], ["1690 Bonos", 23.2], ["3400 Bonos", 46.47], ["6820 Bonos", 92.79]], "genshin-impact": [["60 Cristales Génesis", 1.17], ["300 + 30 Cristales Génesis", 5.84], ["980 + 110 Cristales Génesis", 17.49], ["1980 + 260 Cristales Génesis", 34.98], ["3280 + 600 Cristales Génesis", 58.29], ["6480 + 1600 Cristales Génesis", 116.57]]};
 const DEMO = ['Paquete 1','Paquete 2','Paquete 3','Paquete 4'].map(name => ({ id: null, name }));
 
 $('#games').innerHTML = GAMES.map(g =>
-  `<a class="tile ${g[4]?'out':''}" style="--c1:${g[3]}66" onclick="openGame('${g[0]}')"><i>${g[1][0]}</i>${IMG[g[0]]?`<img src="${IMG[g[0]]}" alt="" loading="lazy" onerror="this.remove()">`:''}${g[4]?'<em>Agotado</em>':''}<b>${g[1]}</b><span>${g[2]}</span></a>`).join('');
+  `<a class="tile ${g[4]?'out':''}" style="--c1:${g[3]}66" onclick="openGame('${g[0]}')"><i>${g[1][0]}</i><img src="${urls(g[0])[0]}" alt="" onerror="nextImg(this,'${g[0]}')">${g[4]?'<em>Agotado</em>':''}<b>${g[1]}</b><span>${g[2]}</span></a>`).join('');
 
 let cur, pkgs = DEMO, sel = null;
 
