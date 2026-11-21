@@ -73,6 +73,102 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l
 </style>
 </head>
 <body>
+  <script>
+/* VORKASTORE · Pantalla de carga + bienvenida (usuario y saldo) + animaciones.
+   PEGAR JUSTO DEBAJO DE <body>. No hay que tocar nada más. */
+(() => {
+const q = s => document.querySelector(s);
+const css = `
+#ld{position:fixed;inset:0;z-index:999;display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(520px 420px at 50% 36%,#ff5a1f38,transparent 70%),#08080a;animation:ldx .6s ease 4.5s forwards}
+#ld.off{opacity:0;visibility:hidden;transition:opacity .6s,visibility .6s}
+#ld img{width:96px;height:96px;border-radius:50%;border:2px solid var(--ac);animation:pop .8s cubic-bezier(.2,.9,.3,1.3) both,ring 1.6s .8s infinite}
+#ld small{display:block;margin-top:26px;color:var(--mu);font-weight:700;font-size:13px;letter-spacing:.32em;text-transform:uppercase;animation:rise .7s .25s both}
+#ld h1{margin-top:6px;font-size:clamp(36px,11vw,58px);font-weight:800;line-height:1;animation:rise .7s .4s both}
+#ld h1 b{color:var(--ac)}
+#ld .ldb{width:190px;height:4px;margin:26px auto 0;border-radius:9px;background:#ffffff1a;overflow:hidden;animation:rise .7s .55s both}
+#ld .ldb i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),#ffb27a);animation:bar 1.6s .6s cubic-bezier(.3,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}}
+@keyframes ring{from{box-shadow:0 0 0 0 #ff5a1f88}to{box-shadow:0 0 0 20px #ff5a1f00}}
+@keyframes bar{from{transform:translateX(-100%)}}
+@keyframes ldx{to{opacity:0;visibility:hidden}}
+@keyframes dlg{from{opacity:0;transform:translateY(30px) scale(.95)}}
+@keyframes fi{from{opacity:0}}
+@keyframes vwin{from{opacity:0;transform:translateY(28px)}}
+@keyframes blink{50%{opacity:.35}}
+
+/* Entrada de la tienda (después de la carga) */
+.rdy .tile{animation:rise .55s calc(var(--n,0)*70ms + .15s) both}
+.rdy .hero,.rdy .wl>*{animation:rise .6s .1s both}
+.rdy .wl>:nth-child(2){animation-delay:.25s}
+
+/* Cada pestaña / ventana entra con animación */
+dialog[open]{animation:dlg .35s cubic-bezier(.2,.9,.3,1.1)}
+dialog[open]::backdrop{animation:fi .35s}
+#game[open] .pk{animation:rise .5s .12s both}
+.vw:not([hidden]){animation:vwin .4s cubic-bezier(.2,.8,.2,1)}
+.vi>*{animation:rise .5s both}
+.vi>:nth-child(2){animation-delay:.06s}.vi>:nth-child(3){animation-delay:.12s}.vi>:nth-child(4){animation-delay:.18s}.vi>:nth-child(5){animation-delay:.24s}.vi>:nth-child(n+6){animation-delay:.3s}
+.tab a{transition:transform .15s,color .2s}.tab a:active{transform:scale(.88)}
+
+/* Bienvenida */
+.wlc{margin:20px 0 12px;padding:26px 22px;border-radius:24px;border:1px solid #6b2c20;background:radial-gradient(120% 140% at 90% 0%,#ff5a1f40,transparent 60%),linear-gradient(160deg,#2b1210,#0c0c0e 70%)}
+.wlp{display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border:1px solid #6b2c20;border-radius:99px;color:var(--ac);font-weight:800;font-size:11px;letter-spacing:.25em}
+.wlp i{width:9px;height:9px;border-radius:50%;background:var(--ac);animation:blink 1.4s infinite}
+.wlc small{display:block;margin:18px 0 4px;color:var(--mu);font-weight:800;font-size:12px;letter-spacing:.3em}
+.wlc h1{font-size:clamp(36px,11vw,60px);line-height:1.05;font-weight:800}
+.wlc h1 b{color:var(--ac)}
+.wlc p{margin-top:12px;max-width:520px;color:var(--mu)}
+.wlc p.wlu{color:var(--tx);letter-spacing:.08em}
+.wlu b{color:var(--ac);font-weight:800;word-break:break-all}
+.wlc p.wlq{color:#ffb9a0;font-weight:800;font-size:12px;letter-spacing:.05em}
+.wlc .btn{margin-top:14px;width:100%;max-width:340px}
+.wlb{display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:16px;border:1px solid #6b2c20;border-radius:24px;background:#111113}
+.wlb>div{flex:1;min-width:0}
+.wlb small{display:block;color:var(--mu);font-weight:800;font-size:11px;letter-spacing:.22em}
+.wlb b{display:block;font-size:30px;line-height:1.2}
+.wlb span:not(.wic){color:var(--mu);font-size:12px}
+.wlb .btn{white-space:nowrap}
+
+@media(prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+`;
+document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
+
+/* ---------- Pantalla de carga ---------- */
+document.body.insertAdjacentHTML('afterbegin', `<div id="ld" aria-hidden="true"><div><img src="logo.png.jpeg" alt=""><small>Bienvenido a</small><h1>VORKA<b>STORE</b></h1><div class="ldb"><i></i></div></div></div>`);
+const ld = q('#ld');
+const out = () => { document.body.classList.add('rdy'); ld.classList.add('off'); setTimeout(() => ld.remove(), 800); };
+const go = () => setTimeout(out, Math.max(0, 1900 - performance.now()));
+addEventListener('load', go);
+setTimeout(out, 4000);
+
+/* ---------- Bienvenida con usuario y saldo ---------- */
+async function welcome() {
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  q('#wl').hidden = !session; q('.hero').hidden = !!session;
+  if (!session) return;
+  const u = session.user, m = u.user_metadata || {};
+  q('#wlu').textContent = '@' + String(m.username || m.user_name || (u.email || 'jugador').split('@')[0]).replace(/^@/, '');
+  q('#wlm').textContent = bal == null ? '$…' : '$' + fmt(bal);
+}
+
+addEventListener('DOMContentLoaded', () => {
+  q('.hero').insertAdjacentHTML('beforebegin', `<section class="wl" id="wl" hidden>
+<div class="wlc"><span class="wlp"><i></i>TU CENTRO GAMING</span><small>¡BIENVENIDO DE NUEVO!</small><h1>VORKA<b>STORE</b></h1><p class="wlu">HOLA, <b id="wlu"></b></p><p>Todo lo que necesitas para tus juegos favoritos está aquí. Explora nuestros servicios y disfruta de tu experiencia gaming.</p><p class="wlq">¿NO SABES CÓMO UTILIZAR VORKASTORE? PRESIONA EL BOTÓN Y CONSULTA TUS DUDAS.</p><a class="btn p" id="wlh" target="_blank" rel="noopener">Cómo usar VORKASTORE →</a></div>
+<div class="wlb"><span class="wic">👛</span><div><small>SALDO DISPONIBLE</small><b id="wlm">$0.00</b><span>Tu billetera VORKASTORE</span></div><button class="btn p" onclick="panel('wallet')">+ Depositar</button></div>
+</section>`);
+  q('#wlh').href = WHATSAPP;
+  document.querySelectorAll('.tile').forEach((t, i) => t.style.setProperty('--n', i));
+  /* "Inicio" repite la animación de entrada */
+  q('.tab a').addEventListener('click', () => { document.body.classList.remove('rdy'); void document.body.offsetWidth; document.body.classList.add('rdy'); });
+  /* Cada vez que cambia el saldo o la sesión, se actualiza la bienvenida */
+  const pa = window.paintAuth;
+  window.paintAuth = s => { pa(s); welcome(); };
+  welcome();
+});
+})();
+</script>
 <header><div class="wrap bar">
   <a class="brand" href="#"><img src="logo.png.jpeg" alt="VORKA"><span>VORKA<b>STORE</b></span></a>
   <nav class="top"><a href="#juegos">Juegos</a><a href="#nosotros">Nosotros</a></nav>
