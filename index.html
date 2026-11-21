@@ -169,6 +169,121 @@ addEventListener('DOMContentLoaded', () => {
 });
 })();
 </script>
+<script>
+/* VORKASTORE · Logo en la bienvenida + perfil editable (nombre y foto).
+   PEGAR justo debajo del </script> del bloque anterior (antes de <header>). */
+(() => {
+const q = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+document.head.insertAdjacentHTML('beforeend', `<style>
+.wlg{display:block;width:min(100%,300px);height:auto;margin:18px 0 0}
+.wlc{position:relative}
+.wla{position:absolute;top:18px;right:18px;width:48px;height:48px;padding:0;border-radius:50%;border:2px solid var(--ac);background:#2b1210 center/cover;color:var(--tx);font:800 20px Montserrat,sans-serif;cursor:pointer;display:grid;place-items:center;overflow:hidden}
+.wla[hidden]{display:none}
+.pf{text-align:center;font-size:14px}
+.pf>*{animation:rise .45s both}
+.pf>:nth-child(n+2){animation-delay:.08s}.pf>:nth-child(n+4){animation-delay:.16s}
+.pfa{width:104px;height:104px;margin:6px auto 0;border-radius:50%;border:3px solid var(--ac);box-shadow:0 0 0 6px #ff5a1f22;background:#2b1210 center/cover;display:grid;place-items:center;font:800 40px Montserrat,sans-serif;overflow:hidden}
+.pf h4{margin-top:14px;font-size:22px;word-break:break-all}
+.pf p{color:var(--mu);font-size:13px;word-break:break-all}
+.pfb{display:inline-block;margin:10px 0 4px;padding:7px 14px;border:1px solid #6b2c20;border-radius:99px;background:#ff5a1f14;color:var(--ac);font-weight:800;font-size:12px}
+.pf .btn{width:100%;margin-top:10px}
+.pf label{text-align:left}
+</style>`);
+
+let av = { uid: null, url: '' }, pending = null;
+const nameOf = u => { const m = u.user_metadata || {}; return String(m.username || m.user_name || (u.email || 'jugador').split('@')[0]).replace(/^@/, ''); };
+const paintAv = (el, url, name) => { el.style.backgroundImage = url ? `url("${url}")` : ''; el.textContent = url ? '' : name.charAt(0).toUpperCase(); };
+
+/* Foto: primero la tabla "profiles" de Supabase (perfil.sql); si no existe, se guarda en este dispositivo */
+async function loadAv(u) {
+  if (av.uid === u.id) return av.url;
+  let url = '';
+  const { data } = await sb.from('profiles').select('avatar').eq('id', u.id).maybeSingle();
+  if (data && data.avatar) url = data.avatar;
+  else { try { url = localStorage.getItem('vk_av_' + u.id) || ''; } catch {} }
+  av = { uid: u.id, url: url.startsWith('data:image/') ? url : '' };
+  return av.url;
+}
+
+async function sync() {
+  const b = q('#wla');
+  if (!sb || !b) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { b.hidden = true; return; }
+  await loadAv(session.user);
+  b.hidden = false; paintAv(b, av.url, nameOf(session.user));
+}
+
+async function profile(edit) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { q('#login').showModal(); return; }
+  const u = session.user, name = nameOf(u);
+  await loadAv(u);
+  q('#pt').textContent = 'Perfil';
+  if (!edit) {
+    q('#pbody').innerHTML = `<div class="pf"><div class="pfa" id="pfa"></div><h4>@${esc(name)}</h4><p>${esc(u.email)}</p><span class="pfb">Cliente VORKASTORE</span><button class="btn" onclick="VKP.e()">Editar perfil</button><button class="btn" onclick="sb.auth.signOut();document.querySelector('#panel').close()">Cerrar sesión</button></div>`;
+    paintAv(q('#pfa'), av.url, name);
+  } else {
+    pending = null;
+    q('#pbody').innerHTML = `<div class="pf"><div class="pfa" id="pfa" onclick="document.getElementById('pff').click()"></div><input id="pff" type="file" accept="image/*" hidden onchange="VKP.f(this.files[0])"><button class="btn" onclick="document.getElementById('pff').click()">Cambiar foto</button><label for="pfn">Nombre de usuario</label><input id="pfn" maxlength="20" autocomplete="off" value="${esc(name)}"><div class="msg" id="pfm"></div><div class="row"><button class="btn" onclick="VKP.c()">Cancelar</button><button class="btn p" id="pfs" onclick="VKP.s()">Guardar</button></div></div>`;
+    paintAv(q('#pfa'), av.url, name);
+  }
+  if (!q('#panel').open) q('#panel').showModal();
+}
+
+window.VKP = {
+  e: () => profile(true),
+  c: () => profile(),
+  f: file => {
+    if (!file) return;
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const c = document.createElement('canvas'), n = 192, s = Math.min(img.width, img.height);
+      c.width = c.height = n;
+      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, n, n);
+      pending = c.toDataURL('image/jpeg', .82);
+      URL.revokeObjectURL(url);
+      paintAv(q('#pfa'), pending, '');
+    };
+    img.onerror = () => { q('#pfm').textContent = 'No se pudo leer esa imagen. Prueba con otra.'; };
+    img.src = url;
+  },
+  s: async () => {
+    const m = q('#pfm'), b = q('#pfs'), name = q('#pfn').value.trim().replace(/^@/, '');
+    if (!/^[\w.]{3,20}$/.test(name)) { m.textContent = 'El nombre debe tener de 3 a 20 caracteres: letras, números, punto o guion bajo.'; return; }
+    b.disabled = true; m.textContent = 'Guardando…';
+    const { data: { session } } = await sb.auth.getSession();
+    const u = session.user;
+    if (name !== nameOf(u)) {
+      const { error } = await sb.auth.updateUser({ data: { username: name } });
+      if (error) { b.disabled = false; m.textContent = 'No se pudo guardar el nombre: ' + error.message; return; }
+    }
+    if (pending) {
+      try { localStorage.setItem('vk_av_' + u.id, pending); } catch {}
+      await sb.from('profiles').upsert({ id: u.id, avatar: pending });
+      av = { uid: u.id, url: pending };
+    }
+    await profile(); sync();
+  }
+};
+
+addEventListener('DOMContentLoaded', () => {
+  /* Logo de VORKA en la bienvenida (si no carga, queda el texto de antes) */
+  const h = q('.wlc h1'), old = h.innerHTML;
+  h.innerHTML = '<img class="wlg" src="vorka.png" alt="VORKASTORE">';
+  h.firstChild.onerror = () => { h.innerHTML = old; };
+  /* Foto del usuario en la bienvenida: abre el perfil */
+  q('.wlc').insertAdjacentHTML('afterbegin', `<button class="wla" id="wla" hidden aria-label="Mi perfil" onclick="panel('profile')"></button>`);
+  /* La pestaña Perfil usa la nueva pantalla */
+  const _p = window.panel;
+  window.panel = k => k === 'profile' ? profile() : _p(k);
+  const p2 = window.paintAuth;
+  window.paintAuth = s => { p2(s); sync(); };
+  sync();
+});
+})();
+</script>
 <header><div class="wrap bar">
   <a class="brand" href="#"><img src="logo.png.jpeg" alt="VORKA"><span>VORKA<b>STORE</b></span></a>
   <nav class="top"><a href="#juegos">Juegos</a><a href="#nosotros">Nosotros</a></nav>
