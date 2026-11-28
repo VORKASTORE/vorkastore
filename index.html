@@ -726,5 +726,280 @@ window.panel = k => k === 'wallet' ? wallet() : _panel(k);
 })();
 
 </script>
+  <script>
+/* VORKASTORE · Ventanas tipo app: Notificaciones, Ayuda, Mi cuenta, Editar perfil, Seguridad,
+   Pedidos, Términos, Privacidad, redes y botón de soporte.
+   PEGAR justo antes de </body>, DEBAJO del último <script>. No hay que tocar nada más. */
+(() => {
+/* ===== EDITA AQUÍ ===== */
+const REDES = { instagram: 'https://www.instagram.com/vorkacuba?gwpx=eTQ4M3lscXF1NnU3&utm_source=qr', facebook: '', youtube: '', telegram: '' }; // pega tus enlaces; los vacíos no se muestran
+const AVISOS = [
+  { id: 'a1', t: '🎮 ¡Bienvenido a VORKASTORE!', b: 'Recarga Free Fire, Mobile Legends, Honor of Kings y más con tu ID de jugador.\n\n💎 Elige tu juego en la sección RECARGAR.', d: '2026-11-28T12:00:00' },
+  { id: 'a2', t: '⚠️ Pagos solo en USDT (BEP20)', b: 'Envía únicamente USDT por la red BEP20. Con otra red pierdes los fondos. Por ahora no aceptamos saldo móvil ni transferencia.', d: '2026-11-28T12:00:00' }
+];
+/* ======================= */
+
+const css = `
+.bar{gap:10px}
+.hbx{display:flex;gap:8px}
+.hb{position:relative;flex:none;width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:800 18px Montserrat,sans-serif;display:grid;place-items:center;cursor:pointer}
+.hb i{position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--ac);border:2px solid var(--card)}
+.av{padding:0;border:0;background:none;cursor:pointer;display:block}
+.gav{display:grid;place-items:center;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-weight:800}
+dialog.gm{width:min(480px,94vw);max-height:88vh;padding:22px;border-radius:28px;border-color:#6b2c20;background:radial-gradient(120% 50% at 90% 0%,#ff5a1f26,transparent 60%),#111113}
+.gh{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.gh small{display:block;color:var(--ac);font-weight:800;letter-spacing:.3em;font-size:11px}
+.gh h2{margin:4px 0 0;font-size:clamp(24px,7vw,32px);line-height:1.1;word-break:break-word}
+.gx{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#0c0c0e;color:var(--tx);font:800 18px Montserrat,sans-serif;cursor:pointer}
+.gp{color:var(--mu);font-size:14px;line-height:1.6;margin:0 0 12px}
+.gc{margin-top:12px;padding:14px 16px;border:1px solid var(--line);border-radius:20px;background:#0c0c0e}
+.gc small{display:block;color:var(--mu);font-size:12px;line-height:1.5}
+.gc b{display:block;word-break:break-all}
+.gs{border:0;border-top:1px solid var(--line);margin:12px 0}
+.gt{margin:22px 0 0;font-size:18px}
+.gbal{font:800 30px Montserrat,sans-serif;margin:6px 0 4px}
+.gb{display:block;width:100%;margin-top:10px;padding:15px;border-radius:16px;border:1px solid var(--line);background:#1a1a1e;color:var(--tx);font:800 14px Montserrat,sans-serif;text-align:center;cursor:pointer}
+.gb.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.gb.r{color:#ff9aa8;border-color:#5a2a33;background:#1e1216}
+.gl{background:none;border:0;padding:6px 0;color:var(--ac);font:800 13px Montserrat,sans-serif;text-align:left;cursor:pointer}
+.gm2{min-height:18px;margin-top:10px;font-size:13px;color:var(--mu)}
+.gn{margin-top:12px;padding:16px;border:1px solid var(--line);border-radius:22px;background:#0c0c0e}
+.gn.u{position:relative;padding-left:44px;border-color:#6b2c20;background:#1a100d}
+.gn.u::before{content:"";position:absolute;left:16px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--ac)}
+.gn p{margin:6px 0 0;color:var(--mu);font-size:14px;white-space:pre-line}
+.gd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mu)}
+.gd strong{color:var(--tx);text-align:right}
+.gf{display:flex;gap:8px;overflow:auto;margin:6px 0 4px;padding-bottom:4px}
+.gf button{flex:none;padding:10px 16px;border-radius:99px;border:1px solid var(--line);background:#0c0c0e;color:var(--mu);font:800 13px Montserrat,sans-serif;cursor:pointer}
+.gf button.on{border-color:var(--ac);color:var(--tx);background:#ff5a1f22}
+.sw{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.sw button{width:46px;height:46px;border-radius:14px;border:2px solid transparent;background:linear-gradient(135deg,var(--a),var(--b));cursor:pointer}
+.sw button.on{border-color:#fff}
+.soc{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.soc a{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:18px;background:var(--card);font-weight:700;font-size:14px}
+.soc a>span{font-size:26px}
+.soc small{display:block;color:var(--mu);font-weight:500;font-size:12px}
+.fl{display:flex;flex-wrap:wrap;gap:14px 22px;margin:28px 0 0;padding-top:18px;border-top:1px solid var(--line);font-weight:800;font-size:13px}
+.fl a{cursor:pointer}
+a.sup{position:fixed;right:16px;bottom:88px;z-index:20;width:56px;height:56px;border-radius:18px;border:1px solid #1f5a42;background:#0d1a14;font-size:26px;display:grid;place-items:center}
+.tab a{padding:8px 0 9px;line-height:1.3}
+.tab a span{display:block;font-size:19px}
+@media(min-width:700px){a.sup{bottom:24px}.soc{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:699px){.bch{display:none}}
+`;
+
+const ready = f => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', f) : f();
+const g = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dt = x => x ? new Date(x).toLocaleString('es', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+const ses = async () => sb ? (await sb.auth.getSession()).data.session : null;
+const meta = u => u.user_metadata || {};
+const uname = u => String(meta(u).username || meta(u).user_name || (u.email || 'jugador').split('@')[0]).replace(/^@/, '');
+const AVS = [['#ff7a1a', '#b8300f'], ['#5b7cfa', '#7a5cf0'], ['#2ec27e', '#1b7a56'], ['#e2457a', '#8e2bd4'], ['#f5b301', '#d4561a'], ['#1fa6b8', '#2e6fdb']];
+const avh = (u, n, r) => {
+  const c = AVS[+meta(u).av || 0] || AVS[0];
+  return `<span class="gav" style="--a:${c[0]};--b:${c[1]};width:${n}px;height:${n}px;border-radius:${r}px;font-size:${Math.round(n * .38)}px">${esc(uname(u).slice(0, 2).toUpperCase())}</span>`;
+};
+const gname = s => (GAMES.find(x => x[0] === s) || [0, s])[1];
+
+/* ---------- Ventana base ---------- */
+const dlg = document.createElement('dialog');
+dlg.className = 'gm';
+document.body.append(dlg);
+const win = (k, t, html, pre) => {
+  dlg.innerHTML = `<div class="gh">${pre || ''}<div style="flex:1;min-width:0"><small>${k}</small><h2>${t}</h2></div><button class="gx" onclick="VKM.x()" aria-label="Cerrar">✕</button></div>${html}`;
+  if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
+};
+const txt = (t, ps) => win('VORKASTORE', t, ps.map(p => `<p class="gp">${p}</p>`).join(''));
+
+/* ---------- Ayuda, Términos, Privacidad ---------- */
+const help = () => win('VORKASTORE', 'Ayuda', `<p class="gp">Para recargar, deposita USDT por la red BEP20 en tu billetera, elige un juego, selecciona el paquete e introduce tu ID de jugador. Los depósitos son revisados por administración.</p>
+<p class="gp">Cuando tu depósito sea acreditado, el saldo aparece en tu billetera y ya puedes crear el pedido. Si un pedido no se puede entregar, el importe se devuelve a tu saldo.</p>
+<p class="gp">Si tienes una duda o necesitas una revisión humana, escríbenos por WhatsApp con tu número de pedido.</p>
+<a class="gb p" href="${WHATSAPP}" target="_blank" rel="noopener">Escribir por WhatsApp</a>`);
+const terms = () => txt('Términos y condiciones', [
+  'Al utilizar VORKASTORE aceptas proporcionar datos correctos del jugador y revisar cuidadosamente el ID, servidor, paquete y método de pago antes de confirmar.',
+  'Los pedidos se procesan conforme a la disponibilidad del servicio. Si un pedido no puede completarse y corresponde reembolso, el saldo se devuelve a tu billetera de VORKASTORE.',
+  'Los pagos se hacen únicamente en USDT por la red BEP20. Enviar fondos por otra red puede provocar su pérdida definitiva.',
+  'Los nombres, marcas y logotipos de videojuegos pertenecen a sus respectivos titulares. VORKASTORE es un servicio independiente de recargas y no afirma afiliación oficial con dichos titulares.'
+]);
+const privacy = () => txt('Política de privacidad', [
+  'VORKASTORE utiliza los datos de cuenta necesarios para prestar el servicio: nombre, correo, teléfono, historial de depósitos, pedidos y saldos.',
+  'Los depósitos se registran con su importe y el hash de la transacción (TxID) para revisión administrativa. El registro del depósito, su importe, fecha y estado se conservan en tu historial.',
+  'No publicamos tus datos personales. Tus datos, movimientos y saldos no se muestran públicamente.',
+  'Puedes solicitar asistencia sobre tu cuenta escribiéndonos por WhatsApp.'
+]);
+
+/* ---------- Notificaciones ---------- */
+let NT = [], tAt = 0;
+const rd = () => { try { return JSON.parse(localStorage.getItem('vk_read') || '[]'); } catch { return []; } };
+const wr = a => { try { localStorage.setItem('vk_read', JSON.stringify(a)); } catch {} };
+const dot = () => { const d = g('hbd'); if (d) d.hidden = !NT.some(n => !rd().includes(n.id)); };
+async function loadNT(force) {
+  if (!(await ses())) { NT = []; dot(); return; }
+  if (!force && Date.now() - tAt < 20000) return;
+  tAt = Date.now();
+  const { data } = await sb.from('deposits').select('*').in('status', ['approved', 'rejected']).order('id', { ascending: false }).limit(5);
+  NT = [...(data || []).map(d => ({
+    id: 'd' + d.id + d.status,
+    t: d.status === 'approved' ? '✅ Depósito acreditado' : '⚠️ Depósito rechazado',
+    b: fmt(d.amount) + ' USDT' + (d.status === 'approved' ? ' ya está en tu saldo.' : '. Si crees que es un error, escríbenos por WhatsApp.'),
+    d: d.created_at
+  })), ...AVISOS];
+  dot();
+}
+function nt() {
+  const r = rd();
+  win('VORKASTORE', 'Notificaciones', `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><p class="gp" style="margin:0">Avisos generales y actualizaciones de tu cuenta.</p><button class="gl" onclick="VKM.ra()">Marcar todas leídas</button></div>` +
+    (NT.map(n => {
+      const ok = r.includes(n.id);
+      return `<div class="gn${ok ? '' : ' u'}"><b>${esc(n.t)}</b><p>${esc(n.b)}</p><div class="gd"><span>${dt(n.d)}</span>${ok ? '' : `<button class="gl" onclick="VKM.r('${n.id}')">Marcar como leída</button>`}</div></div>`;
+    }).join('') || '<p class="gp">Sin avisos por ahora.</p>'));
+}
+
+/* ---------- Mi cuenta ---------- */
+async function profile() {
+  const s = await ses();
+  if (!s) { $('#login').showModal(); return; }
+  await loadBal();
+  const u = s.user;
+  win('MI CUENTA', esc(uname(u)), `<p class="gp" style="margin-top:-6px">Perfil y billetera</p>
+<div class="gc"><small>Correo registrado</small><b>${esc(u.email)}</b><hr class="gs"><small>Teléfono registrado</small><b>${esc(meta(u).phone || '—')}</b></div>
+<h3 class="gt">TU BILLETERA</h3>
+<div class="gc"><small>Saldo USDT (BEP20)</small><div class="gbal">$${fmt(bal || 0)} USDT</div><button class="gl" onclick="VKM.dep()">+ Depositar USDT →</button></div>
+<div class="gc"><small>🔒 Tu información personal se mantiene protegida dentro de tu cuenta de VORKASTORE. Tus datos, movimientos y saldos no se muestran públicamente.</small></div>
+<button class="gb" onclick="VKM.e()">✏️ Editar perfil</button><button class="gb" onclick="VKM.sg()">🛡️ Seguridad</button><button class="gb" onclick="VKM.o()">🧾 Mis pedidos</button><button class="gb r" onclick="VKM.out()">Cerrar sesión</button>`, avh(u, 72, 22));
+}
+
+/* ---------- Editar perfil ---------- */
+const CC = [['🇨🇺', '+53'], ['🇲🇽', '+52'], ['🇪🇸', '+34'], ['🇺🇸', '+1'], ['🇻🇪', '+58'], ['🇨🇴', '+57']];
+async function edit(note) {
+  const s = await ses();
+  if (!s) return;
+  const u = s.user, cur = +meta(u).av || 0;
+  win('MI CUENTA', 'Editar perfil', `<div class="gc" style="display:flex;gap:14px;align-items:center">${avh(u, 64, 32)}<div style="flex:1"><b style="word-break:normal">Avatar</b><small>Elige cómo quieres aparecer en VORKASTORE.</small></div></div>
+<div class="sw">${AVS.map((c, i) => `<button type="button" class="${i === cur ? 'on' : ''}" style="--a:${c[0]};--b:${c[1]}" onclick="VKM.sa(${i})" aria-label="Avatar ${i + 1}"></button>`).join('')}</div>
+<div class="gc"><b style="word-break:normal">Datos personales</b><small>Información principal de tu cuenta.</small><label for="enm">Nombre</label><input id="enm" maxlength="24" value="${esc(uname(u))}"><button class="gb" onclick="VKM.sn()">Guardar nombre</button></div>
+<div class="gc"><b style="word-break:normal">Editar correo</b><small>El nuevo correo deberá confirmarse antes de quedar activo.</small><label for="eem">Nuevo correo electrónico</label><input id="eem" type="email" placeholder="nuevo@gmail.com"><button class="gb" onclick="VKM.se()">Confirmar cambio de correo</button></div>
+<div class="gc"><b style="word-break:normal">Editar teléfono</b><small>Es opcional. Si eliges Cuba, debe comenzar con 5 o 6. Deja el campo vacío para retirar el número.</small><label for="eph">Nuevo teléfono</label><div style="display:flex;gap:8px"><select id="ecc" style="width:40%">${CC.map(c => `<option value="${c[1]}">${c[0]} ${c[1]}</option>`).join('')}</select><input id="eph" inputmode="numeric" placeholder="8 dígitos"></div><button class="gb" onclick="VKM.sp()">Guardar teléfono</button></div>
+<div class="gm2" id="emsg">${esc(note || '')}</div>
+<button class="gb" onclick="VKM.p()">← Volver a mi cuenta</button>`);
+}
+const upd = async (attrs, ok) => {
+  const m = g('emsg');
+  m.textContent = 'Guardando…';
+  const { error } = await sb.auth.updateUser(attrs);
+  if (error) { m.textContent = tr(error.message); return false; }
+  m.textContent = ok;
+  return true;
+};
+
+/* ---------- Seguridad ---------- */
+const sec = () => win('MI CUENTA', 'Seguridad', `<p class="gp">Cambia tu contraseña. Usa 6 caracteres o más.</p>
+<label for="spw">Nueva contraseña</label><input id="spw" type="password" autocomplete="new-password">
+<label for="spw2">Repite la contraseña</label><input id="spw2" type="password" autocomplete="new-password">
+<div class="gm2" id="emsg"></div>
+<button class="gb p" onclick="VKM.sw()">Cambiar contraseña</button><button class="gb" onclick="VKM.p()">← Volver a mi cuenta</button>`);
+
+/* ---------- Pedidos ---------- */
+let of = 'all';
+const ST = { pending: 'Pendiente', processing: 'Procesando', paid: 'Pagado', completed: 'Completado', delivered: 'Entregado', approved: 'Acreditado', rejected: 'Rechazado', refunded: 'Reembolsado', cancelled: 'Cancelado' };
+async function orders(f) {
+  const s = await ses();
+  if (!s) { $('#login').showModal(); return; }
+  if (f) of = f;
+  const [o, d] = await Promise.all([
+    sb.from('orders').select('*').order('id', { ascending: false }).limit(30),
+    sb.from('deposits').select('*').order('id', { ascending: false }).limit(30)
+  ]);
+  const rows = [
+    ...(of !== 'dep' ? (o.data || []).map(x => ({ t: x.created_at, h: `🎮 #${x.id} · ${esc(gname(x.game_slug))}`, a: fmt(x.amount) + ' USDT', s: x.status })) : []),
+    ...(of !== 'rec' ? (d.data || []).map(x => ({ t: x.created_at, h: '💰 Depósito USDT', a: '+' + fmt(x.amount) + ' USDT', s: x.status })) : [])
+  ].sort((a, b) => new Date(b.t || 0) - new Date(a.t || 0));
+  win('HISTORIAL', 'Pedidos', `<p class="gp">Consulta tus recargas y depósitos con fecha y hora.</p>
+<div class="gf">${[['all', 'Todo'], ['rec', '🎮 Recargas'], ['dep', '💰 Depósitos']].map(c => `<button class="${of === c[0] ? 'on' : ''}" onclick="VKM.o('${c[0]}')">${c[1]}</button>`).join('')}</div>` +
+    (rows.map(r => `<div class="gn"><b>${r.h}</b><div class="gd"><span>${dt(r.t)}</span><strong>${r.a} · ${ST[r.s] || esc(r.s)}</strong></div></div>`).join('') ||
+      `<div class="gc" style="text-align:center;padding:30px 16px"><div style="font-size:42px">🧾</div><b style="font-size:18px;word-break:normal">Aún no hay pedidos</b><small>Cuando realices tu primera recarga o depósito aparecerá aquí.</small></div>`));
+}
+
+/* ---------- Acciones ---------- */
+const VKM = window.VKM = {
+  x: () => dlg.close(),
+  help, t: terms, pv: privacy, p: profile, e: edit, sg: sec, o: orders,
+  nt: async () => { await loadNT(true); nt(); },
+  r: id => { const y = dlg.scrollTop; wr([...new Set([...rd(), id])]); dot(); nt(); dlg.scrollTop = y; },
+  ra: () => { wr([...new Set([...rd(), ...NT.map(n => n.id)])]); dot(); nt(); },
+  dep: async () => { dlg.close(); await window.panel('wallet'); if (!g('vw').hidden) window.VK.m(); },
+  out: async () => { dlg.close(); await sb.auth.signOut(); },
+  sa: async i => { if (await upd({ data: { av: i } }, 'Avatar actualizado.')) edit('Avatar actualizado.'); },
+  sn: async () => {
+    const n = g('enm').value.trim();
+    if (n.length < 2 || n.length > 24) { g('emsg').textContent = 'El nombre debe tener entre 2 y 24 caracteres.'; return; }
+    if (await upd({ data: { username: n } }, 'Nombre guardado.')) edit('Nombre guardado.');
+  },
+  se: async () => {
+    const e = g('eem').value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(e)) { g('emsg').textContent = 'Escribe un correo válido.'; return; }
+    await upd({ email: e }, 'Te enviamos un correo para confirmar el cambio.');
+  },
+  sp: async () => {
+    const cc = g('ecc').value, n = g('eph').value.replace(/\D/g, '');
+    if (n && cc === '+53' && !/^[56]\d{7}$/.test(n)) { g('emsg').textContent = 'En Cuba el número tiene 8 dígitos y empieza con 5 o 6.'; return; }
+    if (n && (n.length < 6 || n.length > 14)) { g('emsg').textContent = 'Escribe un número válido.'; return; }
+    const ok = n ? 'Teléfono guardado.' : 'Teléfono retirado.';
+    if (await upd({ data: { phone: n ? cc + ' ' + n : '' } }, ok)) edit(ok);
+  },
+  sw: async () => {
+    const a = g('spw').value, b = g('spw2').value;
+    if (a.length < 6) { g('emsg').textContent = 'La contraseña debe tener 6 caracteres o más.'; return; }
+    if (a !== b) { g('emsg').textContent = 'Las contraseñas no coinciden.'; return; }
+    if (await upd({ password: a }, 'Contraseña cambiada.')) { g('spw').value = ''; g('spw2').value = ''; }
+  }
+};
+
+/* ---------- Encabezado con avatar ---------- */
+const skin = async s => {
+  if (!s) { NT = []; dot(); return; }
+  const u = (await ses())?.user;
+  if (!u) return;
+  g('auth').innerHTML = `<span style="display:flex;gap:8px;align-items:center">${bal == null ? '' : `<button class="btn bch" onclick="panel('wallet')">${fmt(bal)} USDT</button>`}<button class="av" onclick="VKM.p()" aria-label="Mi cuenta">${avh(u, 42, 14)}</button></span>`;
+  loadNT();
+};
+
+ready(() => {
+  document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
+
+  /* Botones ? y campana */
+  g('auth').insertAdjacentHTML('beforebegin', `<span class="hbx"><button class="hb" onclick="VKM.help()" aria-label="Ayuda">?</button><button class="hb" onclick="VKM.nt()" aria-label="Notificaciones">🔔<i id="hbd" hidden></i></button></span>`);
+  document.querySelector('nav.top').insertAdjacentHTML('beforeend', '<a style="cursor:pointer" onclick="VKM.o()">Pedidos</a>');
+
+  /* Barra inferior: Inicio · Recargar · Depositar · Pedidos */
+  const tb = document.querySelectorAll('.tab a');
+  if (tb.length === 4) {
+    [['🏠', 'Inicio'], ['🎮', 'Recargar'], ['👛', 'Depositar'], ['🧾', 'Pedidos']].forEach((x, i) => { tb[i].innerHTML = `<span>${x[0]}</span>${x[1]}`; });
+    tb[1].setAttribute('onclick', "document.getElementById('juegos').scrollIntoView()");
+    tb[2].setAttribute('onclick', 'VKM.dep()');
+    tb[3].setAttribute('onclick', 'VKM.o()');
+  }
+
+  /* Redes, enlaces legales y soporte */
+  const soc = [['💬', 'WhatsApp', 'Soporte directo.', WHATSAPP],
+    ...[['instagram', '📸', 'Instagram', 'Página oficial de VORKASTORE.'], ['facebook', '📘', 'Facebook', 'Página oficial de VORKASTORE.'], ['youtube', '▶️', 'YouTube', 'Nuestro canal.'], ['telegram', '✈️', 'Telegram', 'Novedades y recargas.']]
+      .filter(r => REDES[r[0]]).map(r => [r[1], r[2], r[3], REDES[r[0]]])];
+  document.querySelector('main footer').insertAdjacentHTML('beforebegin', `<h2>Conoce nuestras redes y canales</h2>
+<div class="soc">${soc.map(r => `<a href="${esc(r[3])}" target="_blank" rel="noopener"><span>${r[0]}</span><div>${r[1]}<small>${r[2]}</small></div></a>`).join('')}</div>
+<div class="fl"><a onclick="VKM.help()">Ayuda</a><a onclick="VKM.t()">Términos y condiciones</a><a onclick="VKM.pv()">Política de privacidad</a></div>`);
+  document.body.insertAdjacentHTML('beforeend', `<a class="sup" href="${WHATSAPP}" target="_blank" rel="noopener" aria-label="Soporte por WhatsApp">💬</a>`);
+
+  /* Enganche con el resto de la tienda */
+  const pa = window.paintAuth;
+  window.paintAuth = s => { pa(s); skin(s); };
+  const _p = window.panel;
+  window.panel = k => k === 'orders' ? orders() : k === 'profile' ? profile() : _p(k);
+  if (sb) sb.auth.getSession().then(({ data: { session } }) => skin(session));
+});
+})();
+</script>
 </body>
 </html>
