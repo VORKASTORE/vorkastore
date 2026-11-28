@@ -1002,22 +1002,25 @@ ready(() => {
 })();
 </script>
 <script>
-/* VORKASTORE · Granja Vorka 3D (tycoon estilo Roblox). REEMPLAZA al bloque anterior "Granja Vorka":
-   borra el bloque viejo y pega este justo antes de </body>, debajo de los otros <script>. */
+/* VORKASTORE · Granja Vorka 3D: tycoon + supervivencia (día/noche, lobos, espada, arco, armadura,
+   árboles, rocas e inventario con crafteo). REEMPLAZA al bloque anterior de la granja:
+   borra el viejo y pega este antes de </body>, debajo de los otros <script>. */
 (() => {
 /* ===== EDITA AQUÍ ===== */
-const START = 100;      // monedas iniciales
-const OFFLINE = 7200;   // segundos máximos que la caja acumula con el juego cerrado (2 h)
-// [emoji, nombre, costo base, monedas por segundo, color del animal]
+const START = 100, OFFLINE = 7200;
+const CY = 150; // segundos que dura un día completo (≈65% día, ≈35% noche)
+// [emoji, nombre, costo base, monedas por segundo, color]
 const T = [
   ['🐔', 'Gallina', 10, 0.1, '#f7f3e8'], ['🐑', 'Oveja', 120, 1, '#e4e4e4'], ['🐖', 'Cerdo', 1400, 8, '#f4a6b8'],
   ['🐄', 'Vaca', 16000, 60, '#8b5a3c'], ['🐴', 'Caballo', 2e5, 450, '#a0522d'], ['🦙', 'Llama', 2.5e6, 3500, '#d9c9a3'],
   ['🦌', 'Ciervo dorado', 3e7, 28000, '#d4af37'], ['🦄', 'Unicornio', 4e8, 2.2e5, '#ffffff'],
   ['🐲', 'Dragón', 5e9, 1.8e6, '#2e8b57'], ['👽', 'Alien granjero', 7e10, 1.5e7, '#7ee081']
 ];
-// Potenciadores permanentes: [emoji, nombre, costo base, multiplicador de costo por nivel, nivel máximo]
-// Velocidad: +12% por nivel · Dinero: ×1.5 por nivel · Auto-cobro: la caja se cobra sola cada 5 s
-const PW = [['⚡', 'Velocidad', 150, 3, 10], ['💰', 'Dinero ×1.5', 500, 8, 40], ['🧲', 'Auto-cobro', 5000, 1, 1]];
+// Mejoras con monedas: [emoji, nombre, costo base, ×costo por nivel, nivel máx]  (el orden NO se cambia)
+const PW = [['⚡', 'Velocidad', 150, 3, 10], ['💰', 'Dinero ×1.5', 500, 8, 40], ['🧲', 'Auto-cobro', 5000, 1, 1],
+  ['⚔️', 'Espada', 60, 4, 12], ['🛡️', 'Armadura', 80, 4, 12], ['🏹', 'Arco', 120, 4, 12]];
+// Crafteo: [emoji, nombre, descripción, madera, piedra, herramienta (0 pico, 1 hacha, -1 flechas)]
+const RC = [['⛏️', 'Pico', 'Permite picar rocas', 6, 0, 0], ['🪓', 'Hacha', 'Talas más rápido y sacas más madera', 4, 3, 1], ['🏹', 'Flechas ×10', 'Munición del arco', 2, 1, -1]];
 /* ======================= */
 
 const R = 1.15, KEY = 'vk_farm', SF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
@@ -1029,35 +1032,59 @@ const nf = n => {
   while (n >= 1000) { n /= 1000; i++; }
   return +n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SF[i];
 };
-const fresh = () => ({ c: START, b: 0, tot: 0, o: T.map(() => 0), u: T.map(() => 0), p: PW.map(() => 0), ts: Date.now() });
+const fresh = () => ({ c: START, b: 0, tot: 0, w: 0, s: 0, a: 0, n: 0, k: [0, 0], o: T.map(() => 0), u: T.map(() => 0), p: PW.map(() => 0), ts: Date.now() });
 const norm = s => {
   if (!s || !s.o || !s.u || s.o.length !== T.length || s.u.length !== T.length || !isFinite(s.c)) return null;
-  s.b = isFinite(s.b) ? s.b : 0; s.tot = isFinite(s.tot) ? s.tot : 0; s.ts = isFinite(s.ts) ? s.ts : Date.now();
-  if (!Array.isArray(s.p) || s.p.length !== PW.length) s.p = PW.map(() => 0);
+  ['b', 'tot', 'w', 's', 'a', 'n'].forEach(k => { s[k] = +s[k] || 0; });
+  s.ts = isFinite(s.ts) ? s.ts : Date.now();
+  if (!Array.isArray(s.k) || s.k.length !== 2) s.k = [0, 0];
+  if (!Array.isArray(s.p)) s.p = [];
+  while (s.p.length < PW.length) s.p.push(0);
   return s;
 };
 let S = (() => { try { return norm(JSON.parse(localStorage.getItem(KEY))); } catch { return null; } })() || fresh();
 const save = () => { S.ts = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 const ips = () => T.reduce((a, t, i) => a + S.o[i] * t[3] * 2 ** S.u[i], 0) * 1.5 ** S.p[1];
-const pc = j => PW[j][2] * PW[j][3] ** S.p[j];   // costo del siguiente nivel del potenciador
-const spd = () => 9 * (1 + .12 * S.p[0]);         // velocidad del jugador
-const bc = i => T[i][2] * R ** S.o[i];          // costo de comprar 1 animal
-const uc = i => T[i][2] * 8 * 4 ** S.u[i];      // costo de la mejora (×2 ingresos)
+const bc = i => T[i][2] * R ** S.o[i];
+const uc = i => T[i][2] * 8 * 4 ** S.u[i];
+const pc = j => PW[j][2] * PW[j][3] ** S.p[j];
+const spd = () => 9 * (1 + .12 * S.p[0]);
+const unlocked = i => i === 0 || S.o[i - 1] > 0 || S.o[i] > 0;
+const DESC = [l => `+${l * 12}% de velocidad`, l => `Ganancias ×${+(1.5 ** l).toFixed(2)}`, l => l ? 'Cobra sola cada 5 s' : 'Cobra la caja sola',
+  l => `Daño de espada: ${1 + 2 * l}`, l => `Recibes el ${Math.round(.9 ** l * 100)}% del daño`, l => l ? `Daño del arco: ${1.5 + 1.5 * l}` : 'Desbloquea el arco'];
 
-let dlg, ren, scn, cam, clk, raf, pl, cpad, limbs, camK = 1, t = 0, hT = 0, sT = 0, tm, run = false, ld = false;
-let jx = 0, jy = 0, keys = {}, subT = 0, cvT = 0, ac = 0;
-const P = [], PU = [], MC = {};
+let dlg, ren, scn, cam, clk, raf, pl, limbs, amb, dl, cD, cN, camK = 1, t = 0, hT = 0, sT = 0, tm, run = false, ld = false;
+let dayT = 6, wasN = false, sp = 0, spn = 0, cdA = 0, cdB = 0, swing = 0, hp = 100, inv = 0, ac = 0, tab = 0, dtxt = '';
+let jx = 0, jy = 0, keys = {}, subT = 0, cvT = 0;
+const P = [], ND = [], E = [], A = [], MC = {};
 const mat = c => MC[c] || (MC[c] = new THREE.MeshLambertMaterial({ color: c }));
 const mk = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 const rnd = () => Math.random() * 2 - 1;
-
+const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const toast = (m, ms) => {
   const e = g('tyt'); e.textContent = m; e.style.opacity = 1;
   clearTimeout(tm); tm = setTimeout(() => { e.style.opacity = 0; }, ms || 2600);
 };
 
-/* ---------- Ranking (Supabase) ---------- */
+/* ---------- Cuenta: nombre, nube y ranking ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sess = async () => { try { return typeof sb !== 'undefined' && sb ? (await sb.auth.getSession()).data.session : null; } catch { return null; } };
+const nameOf = u => { const m = u.user_metadata || {}; return String(m.username || m.user_name || (u.email || '').split('@')[0]).replace(/^@/, '').slice(0, 24); };
+const cloud = async force => {
+  if (!S.uid || (!force && Date.now() - cvT < 20000)) return;
+  cvT = Date.now(); S.ts = Date.now();
+  try { await sb.from('farm_saves').upsert({ user_id: S.uid, data: S, updated_at: new Date().toISOString() }); } catch {}
+};
+const loadCloud = async () => {
+  const s = await sess();
+  if (!s) return;
+  const u = s.user; let c = null;
+  try { const r = await sb.from('farm_saves').select('data').eq('user_id', u.id).maybeSingle(); c = norm(r.data && r.data.data); } catch {}
+  const keep = (!S.uid || S.uid === u.id) && (!c || S.tot > c.tot || (S.tot === c.tot && S.ts >= c.ts));
+  if (!keep) S = c || fresh();
+  S.uid = u.id;
+  g('tyn').textContent = '@' + nameOf(u);
+};
 const submit = async force => {
   if (typeof sb === 'undefined' || !sb || !(S.tot > 0)) return;
   if (!force && Date.now() - subT < 30000) return;
@@ -1068,9 +1095,9 @@ const rank = async () => {
   const box = g('tyk'), list = g('tyl'), foot = g('tyf');
   box.hidden = false; foot.textContent = ''; list.innerHTML = '<li class="e">Cargando…</li>';
   try {
-    if (typeof sb === 'undefined' || !sb) throw 0;
-    const uid = ((await sb.auth.getSession()).data.session || { user: {} }).user.id;
-    if (!uid) { list.innerHTML = '<li class="e">Inicia sesión para ver el ranking.</li>'; return; }
+    const s = await sess();
+    if (!s) { list.innerHTML = '<li class="e">Inicia sesión para ver el ranking.</li>'; return; }
+    const uid = s.user.id;
     await submit(true);
     const [top, me] = await Promise.all([
       sb.from('farm_scores').select('user_id,name,score').order('score', { ascending: false }).limit(20),
@@ -1085,56 +1112,7 @@ const rank = async () => {
   } catch { list.innerHTML = '<li class="e">El ranking no está disponible por ahora.</li>'; }
 };
 
-/* ---------- Cuenta: nombre y progreso en la nube ---------- */
-const sess = async () => { try { return typeof sb !== 'undefined' && sb ? (await sb.auth.getSession()).data.session : null; } catch { return null; } };
-const nameOf = u => { const m = u.user_metadata || {}; return String(m.username || m.user_name || (u.email || '').split('@')[0]).replace(/^@/, '').slice(0, 24); };
-const cloud = async force => {
-  if (!S.uid || (!force && Date.now() - cvT < 20000)) return;
-  cvT = Date.now(); S.ts = Date.now();
-  try { await sb.from('farm_saves').upsert({ user_id: S.uid, data: S, updated_at: new Date().toISOString() }); } catch {}
-};
-const loadCloud = async () => {
-  const s = await sess();
-  if (!s) return;
-  const u = s.user; let c = null;
-  try { const r = await sb.from('farm_saves').select('data').eq('user_id', u.id).maybeSingle(); c = norm(r.data && r.data.data); } catch {}
-  // Se queda la partida local solo si es de esta cuenta (o aún sin dueño) y va igual o más avanzada que la de la nube
-  const keep = (!S.uid || S.uid === u.id) && (!c || S.tot > c.tot || (S.tot === c.tot && S.ts >= c.ts));
-  if (!keep) S = c || fresh();
-  S.uid = u.id;
-  g('tyn').textContent = '@' + nameOf(u);
-};
-
-/* ---------- Etiquetas flotantes ---------- */
-const lab = () => {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
-  const tx = new THREE.CanvasTexture(c);
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthTest: false, fog: false }));
-  s.scale.set(5, 1.25, 1); s.renderOrder = 5; s.userData = { c, tx, k: '' };
-  return s;
-};
-const draw = (s, a, b, ok) => {
-  const u = s.userData, k = a + b + ok;
-  if (u.k === k) return;
-  u.k = k;
-  const x = u.c.getContext('2d');
-  x.clearRect(0, 0, 512, 128);
-  x.fillStyle = ok ? 'rgba(18,58,30,.92)' : 'rgba(28,28,34,.92)'; x.fillRect(0, 0, 512, 128);
-  x.strokeStyle = ok ? '#5fcf8f' : '#555'; x.lineWidth = 6; x.strokeRect(3, 3, 506, 122);
-  x.textAlign = 'center'; x.font = '700 46px sans-serif';
-  x.fillStyle = '#fff'; x.fillText(a, 256, 55);
-  x.fillStyle = ok ? '#ffd84a' : '#ff8a80'; x.fillText(b, 256, 106);
-  u.tx.needsUpdate = true;
-};
-
-/* ---------- Mundo ---------- */
-const pad = (parent, x, z, c) => {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, .2, 24), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0 }));
-  m.position.set(x, .1, z);
-  const s = lab(); s.position.set(x, 2.5, z);
-  parent.add(m, s);
-  return { m, s, x, z, cd: 0 };
-};
+/* ---------- Modelos ---------- */
 const person = () => {
   const p = new THREE.Group(), L = [];
   const torso = mk(1, 1.2, .6, '#2e7bf6'); torso.position.y = 1.8;
@@ -1146,7 +1124,7 @@ const person = () => {
     const piv = new THREE.Group(), l = mk(.42, 1.15, .42, a[2]);
     piv.position.set(a[0], a[1], 0); l.position.y = -.5; piv.add(l); p.add(piv); L.push(piv);
   });
-  limbs = L; // brazoI, brazoD, piernaI, piernaD
+  limbs = L;
   return p;
 };
 const critter = i => {
@@ -1159,137 +1137,267 @@ const critter = i => {
   k.add(foot, b, h, e, e2);
   return k;
 };
+const wolf = () => {
+  const k = new THREE.Group();
+  const lg = mk(.8, .5, 1.4, '#2a2a30'); lg.position.y = .25;
+  const b = mk(1, .9, 1.7, '#4b4b52'); b.position.y = .85;
+  const h = mk(.75, .7, .75, '#3a3a40'); h.position.set(0, 1.1, 1.1);
+  const e1 = mk(.14, .14, .05, '#ff2a2a'); e1.position.set(-.2, 1.2, 1.5);
+  const e2 = e1.clone(); e2.position.x = .2;
+  k.add(lg, b, h, e1, e2); k.scale.setScalar(1.15);
+  return k;
+};
+const node = r => {
+  const grp = new THREE.Group();
+  if (r) { const m = mk(1.7, 1.1, 1.5, '#8a8f98'); m.position.y = .55; m.rotation.y = Math.random() * 3; grp.add(m); }
+  else { const tr = mk(.6, 2, .6, '#7b5230'), lv = mk(2.3, 2.1, 2.3, '#2f8f46'); tr.position.y = 1; lv.position.y = 3; grp.add(tr, lv); }
+  grp.position.set((Math.random() < .5 ? -1 : 1) * (8 + Math.random() * 18), 0, -2 + Math.random() * 35);
+  scn.add(grp);
+  ND.push({ g: grp, r, hp: r ? 5 : 4, mhp: r ? 5 : 4, rt: 0 });
+};
 const world = () => {
   ren = new THREE.WebGLRenderer({ canvas: g('tyc'), antialias: true });
   ren.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  scn = new THREE.Scene(); scn.background = new THREE.Color(0x8fd3f4); scn.fog = new THREE.Fog(0x8fd3f4, 45, 115);
+  cD = new THREE.Color(0x8fd3f4); cN = new THREE.Color(0x0a0f2c);
+  scn = new THREE.Scene(); scn.background = cD.clone(); scn.fog = new THREE.Fog(0x8fd3f4, 45, 115);
   cam = new THREE.PerspectiveCamera(50, 1, .1, 200);
-  scn.add(new THREE.AmbientLight(0xffffff, .8));
-  const dl = new THREE.DirectionalLight(0xffffff, .55); dl.position.set(10, 25, 8); scn.add(dl);
-  const gr = mk(60, .1, 130, '#5cb85c'); gr.position.set(0, -.05, -30);
+  amb = new THREE.AmbientLight(0xffffff, .8); dl = new THREE.DirectionalLight(0xffffff, .55); dl.position.set(10, 25, 8);
+  scn.add(amb, dl);
+  const gr = mk(70, .1, 140, '#5cb85c'); gr.position.set(0, -.05, -28);
   const al = mk(12, .02, 130, '#dccaa0'); al.position.set(0, .01, -30);
   const cb = mk(3.2, 2.4, 3, '#c0392b'); cb.position.set(0, 1.2, -1);
   const rf = mk(3.6, .4, 3.4, '#f1c40f'); rf.position.set(0, 2.6, -1);
   scn.add(gr, al, cb, rf);
-  cpad = pad(scn, 0, 3.2, '#f1c40f');
-  [[-3.5, 9.5], [3.5, 9.5], [0, 13]].forEach(q => PU.push(pad(scn, q[0], q[1], '#a855f7')));
   T.forEach((_, i) => {
-    const cx = i % 2 ? 10 : -10, cz = -9 - (i >> 1) * 11, sx = i % 2 ? -1 : 1, grp = new THREE.Group();
+    const cx = i % 2 ? 10 : -10, cz = -9 - (i >> 1) * 11, grp = new THREE.Group();
     const fl = mk(8, .12, 8, '#8d6e3f'); fl.position.set(cx, .06, cz); grp.add(fl);
     [[8.4, .25, 0, 4], [8.4, .25, 0, -4], [.25, 8.4, 4, 0], [.25, 8.4, -4, 0]].forEach(f => {
       const w = mk(f[0], .9, f[1], '#e8d8b0'); w.position.set(cx + f[2], .45, cz + f[3]); grp.add(w);
     });
-    scn.add(grp);
-    P.push({ grp, cx, cz, an: [], buy: pad(grp, cx + sx * 6, cz - 1.8, '#ff7a1a'), up: pad(grp, cx + sx * 6, cz + 1.8, '#3b82f6') });
+    scn.add(grp); P.push({ grp, cx, cz, an: [] });
   });
+  for (let i = 0; i < 26; i++) node(0);
+  for (let i = 0; i < 12; i++) node(1);
   pl = person(); pl.position.set(0, 0, 6); scn.add(pl);
 };
 
 /* ---------- Lógica ---------- */
-const unlocked = i => i === 0 || S.o[i - 1] > 0 || S.o[i] > 0;
 const sync = i => {
   const p = P[i], n = Math.min(S.o[i], 12);
+  while (p.an.length > n) p.grp.remove(p.an.pop());
   while (p.an.length < n) {
     const a = critter(i);
-    a.userData = { cx: p.cx, cz: p.cz, tx: p.cx, tz: p.cz, w: 0, ph: Math.random() * 6 };
+    a.tier = i; a.userData = { cx: p.cx, cz: p.cz, tx: p.cx, tz: p.cz, w: 0, ph: Math.random() * 6 };
     a.position.set(p.cx + rnd() * 3, 0, p.cz + rnd() * 3);
     p.grp.add(a); p.an.push(a);
   }
   const sc = (.55 + i * .07) * (1 + .07 * Math.min(S.u[i], 8));
   p.an.forEach(a => a.scale.setScalar(sc));
 };
-const hud = () => {
+const rw = (id, ico, two) => `<div class="tyw" id="${id}"><span>${ico}</span><div><b></b><small></small></div><div class="tyg"><button></button>${two ? '<button class="u"></button>' : ''}</div></div>`;
+const set = (id, a, b, c, cd, d, dd) => {
+  const x = g(id).children, bt = x[2].children;
+  x[1].children[0].textContent = a; x[1].children[1].textContent = b;
+  bt[0].textContent = c; bt[0].disabled = cd;
+  if (bt[1]) { bt[1].textContent = d; bt[1].disabled = dd; }
+};
+const upd = () => {
   g('tyc2').textContent = '🪙 ' + nf(S.c);
   g('tyi').textContent = '+' + nf(ips()) + '/s';
   g('tyb').textContent = 'Caja 🪙 ' + nf(S.b);
-};
-const pads = () => {
-  P.forEach((p, i) => {
-    const v = unlocked(i); p.grp.visible = v;
-    if (!v) return;
-    const c = bc(i), u = uc(i), okb = S.c >= c, oku = S.o[i] > 0 && S.c >= u;
-    draw(p.buy.s, `${T[i][0]} ${T[i][1]} ×${S.o[i]}`, `Comprar 🪙 ${nf(c)}`, okb);
-    draw(p.up.s, `⬆ Mejorar ${T[i][1]}`, `×2 · 🪙 ${nf(u)}`, oku);
-    p.buy.m.material.emissiveIntensity = okb ? .6 : 0;
-    p.up.m.material.emissiveIntensity = oku ? .6 : 0;
+  g('tygs').textContent = nf(S.b); g('tyab').textContent = S.a;
+  g('tyhp').style.width = Math.max(0, hp) + '%'; g('tyd').textContent = dtxt;
+  if (g('tys').hidden) return;
+  if (tab === 0) T.forEach((x, i) => {
+    const e = g('ta' + i); e.hidden = !unlocked(i);
+    if (e.hidden) return;
+    const c = bc(i), u = uc(i);
+    set(e.id, `${x[1]} ×${S.o[i]}`, `+${nf(x[3] * 2 ** S.u[i] * 1.5 ** S.p[1])}/s c/u · Nv ${S.u[i] + 1}`, 'Comprar 🪙 ' + nf(c), S.c < c, '⬆ ×2 · 🪙 ' + nf(u), !S.o[i] || S.c < u);
   });
-  draw(cpad.s, '💰 COBRAR CAJA', '🪙 ' + nf(S.b), S.b >= 1);
-  cpad.m.material.emissiveIntensity = S.b >= 1 ? .7 : .1;
-  PU.forEach((p, j) => {
-    const top = S.p[j] >= PW[j][4], c = pc(j), ok = !top && S.c >= c;
-    draw(p.s, `${PW[j][0]} ${PW[j][1]}${PW[j][4] > 1 ? ' · Nv.' + S.p[j] : ''}`, top ? (PW[j][4] === 1 ? 'ACTIVO ✅' : 'NIVEL MÁXIMO') : 'Comprar 🪙 ' + nf(c), ok);
-    p.m.material.emissiveIntensity = ok ? .6 : 0;
+  if (tab === 1) PW.forEach((x, j) => {
+    const top = S.p[j] >= x[4], c = pc(j);
+    set('tp' + j, x[1] + (x[4] > 1 ? ' · Nv.' + S.p[j] : ''), DESC[j](S.p[j]), top ? 'MÁX' : '🪙 ' + nf(c), top || S.c < c);
   });
+  if (tab === 2) {
+    g('tyinv').textContent = `🪵 ${nf(S.w)}   🪨 ${nf(S.s)}   🏹 ${S.a}`;
+    RC.forEach((x, j) => {
+      const have = x[5] >= 0 && S.k[x[5]], ok = !have && S.w >= x[3] && S.s >= x[4];
+      set('tr' + j, x[1] + (have ? ' ✅' : ''), `${x[2]} · ${x[3]}🪵${x[4] ? ' ' + x[4] + '🪨' : ''}`, have ? 'Listo' : 'Craftear', !ok);
+    });
+  }
 };
 const buy = i => {
   const c = bc(i);
-  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
+  if (S.c < c) return toast('Te faltan 🪙 ' + nf(c - S.c), 1200);
   S.c -= c; S.o[i]++; sync(i);
-  if (S.o[i] === 1 && T[i + 1]) toast('🔓 ¡Nuevo corral: ' + T[i + 1][1] + '!');
-  pads(); hud(); return true;
+  if (S.o[i] === 1 && T[i + 1]) toast('🔓 Nuevo animal: ' + T[i + 1][1]);
+  upd(); save();
 };
 const upg = i => {
-  if (!S.o[i]) { toast('Compra primero un animal', 1500); return false; }
   const c = uc(i);
-  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
-  S.c -= c; S.u[i]++; sync(i); pads(); hud(); return true;
+  if (!S.o[i] || S.c < c) return;
+  S.c -= c; S.u[i]++; sync(i); upd(); save();
 };
 const pbuy = j => {
-  if (S.p[j] >= PW[j][4]) return false;
   const c = pc(j);
-  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
+  if (S.p[j] >= PW[j][4] || S.c < c) return;
   S.c -= c; S.p[j]++;
   toast(PW[j][0] + ' ' + PW[j][1] + (PW[j][4] > 1 ? ' · nivel ' + S.p[j] : ' activado'));
-  pads(); hud(); save(); return true;
+  upd(); save();
 };
-const near = p => Math.hypot(pl.position.x - p.x, pl.position.z - p.z) < 1.8;
+const craft = j => {
+  const x = RC[j];
+  if (S.w < x[3] || S.s < x[4]) return;
+  S.w -= x[3]; S.s -= x[4];
+  if (x[5] >= 0) S.k[x[5]] = 1; else S.a += 10;
+  toast('🛠️ ' + x[1] + ' creado'); upd(); save();
+};
+const collect = quiet => {
+  if (S.b < 1) { if (!quiet) toast('La caja aún está vacía', 1200); return; }
+  const v = S.b; S.c += v; S.tot += v; S.b = 0;
+  if (!quiet) toast('+🪙 ' + nf(v) + ' cobrados', 1500);
+  upd(); save(); submit();
+};
+
+/* ---------- Combate y recursos ---------- */
+const dmg = (e, d) => {
+  e.hp -= d; e.fl = .15;
+  if (e.hp > 0) return;
+  scn.remove(e);
+  const i = E.indexOf(e); if (i >= 0) E.splice(i, 1);
+  S.c += 3 + S.n * 2;
+};
+const hurt = d => {
+  if (t < inv) return;
+  hp -= d * .9 ** S.p[4];
+  if (hp <= 0) { hp = 100; inv = t + 3; pl.position.set(0, 0, 6); S.c *= .9; toast('💀 Te derribaron: pierdes el 10% de tus monedas', 3500); }
+};
+const eat = a => {
+  const i = a.tier, p = P[i], k = p.an.indexOf(a);
+  if (k < 0) return;
+  p.grp.remove(a); p.an.splice(k, 1);
+  S.o[i] = Math.max(0, S.o[i] - 1); sync(i);
+  toast('🐺 ¡Un lobo se comió: ' + T[i][1] + '!', 2000); upd();
+};
+const nearA = e => {
+  let b = null, bd = 1e9;
+  P.forEach(p => p.an.forEach(a => { const d = dist(a.position, e.position); if (d < bd) { bd = d; b = a; } }));
+  return b;
+};
+const quota = () => Math.min(40, 3 + Math.floor(S.n * 1.6));
+const spawn = () => {
+  const e = wolf();
+  e.position.set(Math.random() < .5 ? -30 : 30, 0, -50 + Math.random() * 80);
+  e.hp = 4 * 1.25 ** Math.min(S.n, 25); e.cd = 0; e.rt = 0; e.fl = 0;
+  scn.add(e); E.push(e);
+};
+const dawn = () => {
+  E.forEach(e => scn.remove(e)); E.length = 0;
+  S.n++;
+  const b = 50 + ips() * 45; S.c += b;
+  toast('☀️ ¡Amaneció! Noche superada: +🪙 ' + nf(b), 4000); upd(); save();
+};
+const act = () => {
+  if (t < cdA) return;
+  cdA = t + .4; swing = .2;
+  const d = 1 + 2 * S.p[3]; let hit = false;
+  E.slice().forEach(e => { if (dist(e.position, pl.position) < 3.6) { dmg(e, d); hit = true; } });
+  if (hit) return;
+  let nd = null, bd = 3.2;
+  ND.forEach(n => { if (n.g.visible) { const k = dist(n.g.position, pl.position); if (k < bd) { bd = k; nd = n; } } });
+  if (!nd) return;
+  if (nd.r && !S.k[0]) return toast('Necesitas un pico ⛏️: créalo en 🛒 Inventario', 2600);
+  nd.hp -= nd.r ? 1 : S.k[1] ? 2 : 1;
+  nd.g.scale.setScalar(.9); setTimeout(() => nd.g.scale.setScalar(1), 90);
+  if (nd.hp <= 0) {
+    const n = nd.r ? 3 : S.k[1] ? 4 : 2;
+    if (nd.r) S.s += n; else S.w += n;
+    nd.g.visible = false; nd.rt = t + 25; toast('+' + n + (nd.r ? ' 🪨' : ' 🪵'), 1200); upd(); save();
+  }
+};
+const shoot = () => {
+  if (t < cdB) return;
+  if (!S.p[5]) return toast('Compra el Arco 🏹 en 🛒 Mejoras', 2400);
+  if (S.a < 1) return toast('Sin flechas: crea más en 🛒 Inventario', 2400);
+  cdB = t + .5; S.a--; swing = .15;
+  let tg = null, bd = 28;
+  E.forEach(e => { const d = dist(e.position, pl.position); if (d < bd) { bd = d; tg = e; } });
+  let dx = Math.sin(pl.rotation.y), dz = Math.cos(pl.rotation.y);
+  if (tg) { dx = (tg.position.x - pl.position.x) / (bd || 1); dz = (tg.position.z - pl.position.z) / (bd || 1); pl.rotation.y = Math.atan2(dx, dz); }
+  const m = mk(.12, .12, .9, '#f5e6a8'); m.position.set(pl.position.x, 1.8, pl.position.z); m.rotation.y = Math.atan2(dx, dz);
+  scn.add(m); A.push({ m, dx, dz, life: 1.2 }); upd();
+};
 
 /* ---------- Bucle ---------- */
+const ok = (x, z) => Math.abs(x) <= 27 && z <= 34 && z >= -60 && (z > -4 || Math.abs(x) <= 5.8) && !(Math.abs(x) < 2.3 && Math.abs(z + 1) < 2.2);
+const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const sm = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
 const step = dt => {
-  t += dt;
-  S.b += ips() * dt;
-  const K = keys;
+  t += dt; S.b += ips() * dt;
+  /* Día y noche */
+  dayT += dt;
+  const ph = (dayT % CY) / CY, dk = sm((ph - .6) / .08) * (1 - sm((ph - .94) / .06)), nn = dk > .5;
+  scn.background.copy(cD).lerp(cN, dk); scn.fog.color.copy(scn.background);
+  amb.intensity = .8 - .5 * dk; dl.intensity = .55 - .4 * dk;
+  if (nn && !wasN) { spn = 0; sp = 2; toast('🌙 ¡Cae la noche! Protege tus animales de los lobos 🐺', 4500); }
+  if (!nn && wasN) dawn();
+  wasN = nn;
+  if (nn && spn < quota() && (sp -= dt) <= 0) { spawn(); spn++; sp = 38 / quota(); }
+  dtxt = nn ? `🌙 Noche ${S.n + 1} · amanece en ${mmss((.97 - ph) * CY)}` : `☀️ Día ${S.n + 1} · noche en ${mmss((.64 - ph) * CY)}`;
+  hp = Math.min(100, hp + dt * (nn ? 1 : 5));
+  /* Movimiento */
+  const K = keys, ps = pl.position;
   let mx = jx + (K.d || K.arrowright ? 1 : 0) - (K.a || K.arrowleft ? 1 : 0);
   let mz = jy + (K.s || K.arrowdown ? 1 : 0) - (K.w || K.arrowup ? 1 : 0);
   const m = Math.hypot(mx, mz);
   if (m > 1) { mx /= m; mz /= m; }
-  const mv = m > .1, ps = pl.position;
-  const v = spd() * dt;
-  ps.x += mx * v; ps.z += mz * v;
-  ps.x = Math.max(-5.8, Math.min(5.8, ps.x)); ps.z = Math.max(-60, Math.min(17, ps.z));
+  const mv = m > .1, v = spd() * dt, nx = ps.x + mx * v, nz = ps.z + mz * v;
+  if (ok(nx, ps.z)) ps.x = nx;
+  if (ok(ps.x, nz)) ps.z = nz;
   if (mv) pl.rotation.y = Math.atan2(mx, mz);
+  swing = Math.max(0, swing - dt);
   const sw = mv ? Math.sin(t * 11) * .8 : 0;
-  limbs[0].rotation.x = sw; limbs[1].rotation.x = -sw; limbs[2].rotation.x = -sw; limbs[3].rotation.x = sw;
-  P.forEach((p, i) => {
-    if (!p.grp.visible) return;
-    const nb = near(p.buy), nu = near(p.up);
-    p.buy.m.position.y = nb ? .04 : .1; p.up.m.position.y = nu ? .04 : .1;
-    if (nb && t > p.buy.cd) p.buy.cd = t + (buy(i) ? .3 : 1);
-    if (nu && t > p.up.cd) p.up.cd = t + (upg(i) ? .5 : 1);
-    p.an.forEach(a => {
-      const u = a.userData;
-      if (u.w > 0) { u.w -= dt; a.position.y = 0; return; }
-      const dx = u.tx - a.position.x, dz = u.tz - a.position.z, d = Math.hypot(dx, dz);
-      if (d < .15) { u.w = Math.random() * 2; u.tx = u.cx + rnd() * 3.2; u.tz = u.cz + rnd() * 3.2; return; }
-      a.position.x += dx / d * 1.4 * dt; a.position.z += dz / d * 1.4 * dt;
-      a.position.y = Math.abs(Math.sin(t * 7 + u.ph)) * .12;
-      a.rotation.y = Math.atan2(dx, dz);
-    });
+  limbs[0].rotation.x = sw; limbs[1].rotation.x = swing ? -2 : -sw; limbs[2].rotation.x = -sw; limbs[3].rotation.x = sw;
+  /* Animales */
+  P.forEach(p => p.an.forEach(a => {
+    const u = a.userData;
+    if (u.w > 0) { u.w -= dt; a.position.y = 0; return; }
+    const dx = u.tx - a.position.x, dz = u.tz - a.position.z, d = Math.hypot(dx, dz);
+    if (d < .15) { u.w = Math.random() * 2; u.tx = u.cx + rnd() * 3.2; u.tz = u.cz + rnd() * 3.2; return; }
+    a.position.x += dx / d * 1.4 * dt; a.position.z += dz / d * 1.4 * dt;
+    a.position.y = Math.abs(Math.sin(t * 7 + u.ph)) * .12;
+    a.rotation.y = Math.atan2(dx, dz);
+  }));
+  /* Lobos */
+  E.forEach(e => {
+    let tg = null, tp;
+    if (dist(ps, e.position) < 10) tp = ps;
+    else {
+      if ((e.rt -= dt) <= 0 || !e.ta || !e.ta.parent) { e.rt = .7; e.ta = nearA(e); }
+      tg = e.ta; tp = tg ? tg.position : ps;
+    }
+    const dx = tp.x - e.position.x, dz = tp.z - e.position.z, d = Math.hypot(dx, dz) || 1;
+    if (d > 1.5) { const s2 = 3.6 + Math.min(S.n * .12, 3); e.position.x += dx / d * s2 * dt; e.position.z += dz / d * s2 * dt; e.rotation.y = Math.atan2(dx, dz); }
+    else if ((e.cd -= dt) <= 0) { e.cd = 1.2; if (tg) eat(tg); else hurt(8 + S.n * .8); }
+    if (e.fl > 0) { e.fl -= dt; e.scale.setScalar(1.15 * (1 + e.fl * 2)); }
   });
-  PU.forEach((p, j) => {
-    const n = near(p);
-    p.m.position.y = n ? .04 : .1;
-    if (n && t > p.cd) p.cd = t + (pbuy(j) ? .5 : 1);
+  /* Flechas */
+  A.slice().forEach(a => {
+    a.m.position.x += a.dx * 32 * dt; a.m.position.z += a.dz * 32 * dt; a.life -= dt;
+    const h = E.find(e => dist(e.position, a.m.position) < 1.3);
+    if (h) { dmg(h, 1.5 + 1.5 * S.p[5]); a.life = 0; }
+    if (a.life <= 0) { scn.remove(a.m); A.splice(A.indexOf(a), 1); }
   });
-  const col = quiet => { const v = S.b; S.c += v; S.tot += v; S.b = 0; if (!quiet) toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); submit(); };
-  if (near(cpad)) { cpad.m.position.y = .04; if (S.b >= 1) col(); } else cpad.m.position.y = .1;
-  if (S.p[2] && (ac += dt) > 5) { ac = 0; if (S.b >= 1) col(true); }
+  /* Árboles y rocas vuelven a crecer */
+  ND.forEach(n => { if (!n.g.visible && t > n.rt) { n.g.visible = true; n.hp = n.mhp; } });
+  if (S.p[2] && (ac += dt) > 5) { ac = 0; collect(true); }
+  /* Cámara */
   const f = 1 - Math.exp(-6 * dt);
   cam.position.x += (ps.x - cam.position.x) * f;
   cam.position.y += (15 * camK - cam.position.y) * f;
   cam.position.z += (ps.z + 13 * camK - cam.position.z) * f;
   cam.lookAt(ps.x, 0, ps.z - 2);
-  if ((hT += dt) > .25) { hT = 0; pads(); hud(); }
+  if ((hT += dt) > .25) { hT = 0; P.forEach((p, i) => { p.grp.visible = unlocked(i); }); upd(); }
   if ((sT += dt) > 5) { sT = 0; save(); cloud(); }
 };
 const loop = () => {
@@ -1310,13 +1418,23 @@ const ui = () => {
   dlg = document.createElement('dialog');
   dlg.className = 'tyd';
   dlg.innerHTML = `<canvas id="tyc"></canvas>
-<div class="tyh"><div><small>GRANJA VORKA</small><u id="tyn"></u><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.rk()" aria-label="Ranking">🏆</button><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<div class="tyh"><div><small>GRANJA VORKA</small><u id="tyn"></u><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em><div class="tyd2"><span id="tyd"></span><div class="hp"><div id="tyhp"></div></div></div></div><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<div class="tyr2"><button class="tyx" onclick="VKF.sh()" aria-label="Tienda e inventario">🛒</button><button class="tyx" onclick="VKF.rk()" aria-label="Ranking">🏆</button></div>
 <div class="tyt" id="tyt"></div>
-<div class="tyk" id="tyk" hidden><div class="tyq"><div class="tyqh"><div><small>RANKING</small><b>🏆 Top granjeros</b></div><button class="tyx" onclick="VKF.rkx()" aria-label="Cerrar ranking">✕</button></div><p class="tyqp">Ordenado por el total cobrado en la caja.</p><ul class="tyl" id="tyl"></ul><p class="tyqp" id="tyf" style="color:#ffd84a;font-weight:700"></p></div></div>
 <div class="tyj" id="tyj"><i id="tyk"></i></div>
-<button class="tyr" onclick="VKF.rs()">Reiniciar</button>`;
+<div class="tya"><button class="tyz" onclick="VKF.co()" aria-label="Cobrar caja">💰<small id="tygs"></small></button><button class="tyz" onclick="VKF.bw()" aria-label="Disparar arco">🏹<small id="tyab"></small></button><button class="tyz big" onpointerdown="VKF.at()" aria-label="Atacar o recolectar">⚔️</button></div>
+<div class="tys" id="tys" hidden><div class="tytb">${['🐾 Animales', '⚡ Mejoras', '🎒 Inventario'].map((n, i) => `<button class="${i ? '' : 'on'}" onclick="VKF.tb(${i})">${n}</button>`).join('')}<button onclick="VKF.sh()" aria-label="Cerrar tienda">✕</button></div>
+<div id="tv0">${T.map((x, i) => rw('ta' + i, x[0], 1)).join('')}</div>
+<div id="tv1" hidden>${PW.map((x, j) => rw('tp' + j, x[0])).join('')}</div>
+<div id="tv2" hidden><p class="tyinv" id="tyinv"></p>${RC.map((x, j) => rw('tr' + j, x[0])).join('')}<button class="tyrs" onclick="VKF.rs()">Reiniciar granja</button></div></div>
+<div class="tyk" id="tyk" hidden><div class="tyq"><div class="tyqh"><div><small>RANKING</small><b>🏆 Top granjeros</b></div><button class="tyx" onclick="VKF.rkx()" aria-label="Cerrar ranking">✕</button></div><p class="tyqp">Ordenado por el total cobrado en la caja.</p><ul class="tyl" id="tyl"></ul><p class="tyqp" id="tyf" style="color:#ffd84a;font-weight:700"></p></div></div>`;
   document.body.append(dlg);
-  /* Joystick táctil */
+  g('tys').addEventListener('click', e => {
+    const b = e.target.closest('button'), r = b && b.closest('.tyw');
+    if (!r || b.disabled) return;
+    const k = r.id[1], n = +r.id.slice(2);
+    if (k === 'a') { if (b.classList.contains('u')) upg(n); else buy(n); } else if (k === 'p') pbuy(n); else craft(n);
+  });
   const el = g('tyj'), kn = g('tyk');
   let id = null;
   const mv = e => {
@@ -1329,25 +1447,29 @@ const ui = () => {
   el.addEventListener('pointermove', e => { if (e.pointerId === id) mv(e); });
   const up = e => { if (e.pointerId !== id) return; id = null; jx = jy = 0; kn.style.transform = ''; };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  /* Teclado (computadora) */
-  addEventListener('keydown', e => { if (run && e.key) keys[e.key.toLowerCase()] = 1; });
+  addEventListener('keydown', e => {
+    if (!run || !e.key) return;
+    const k = e.key.toLowerCase(); keys[k] = 1;
+    if (k === ' ') act(); else if (k === 'f') shoot();
+  });
   addEventListener('keyup', e => { if (e.key) keys[e.key.toLowerCase()] = 0; });
   dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; g('tyk').hidden = true; save(); submit(true); cloud(true); });
   addEventListener('resize', resize);
 };
 const go = async () => {
-  try {
-    if (!ren) world();
-  } catch (e) { toast('Tu dispositivo no permite el modo 3D.', 5000); return; }
+  try { if (!ren) world(); } catch (e) { toast('Tu dispositivo no permite el modo 3D.', 5000); return; }
   await loadCloud();
   if (!dlg.open) return;
   const d = Math.min(Math.max((Date.now() - S.ts) / 1000, 0), OFFLINE), gain = ips() * d;
   S.b += gain;
+  E.forEach(e => scn.remove(e)); E.length = 0;
+  A.forEach(a => scn.remove(a.m)); A.length = 0;
+  dayT = 6; wasN = false; hp = 100;
   T.forEach((_, i) => sync(i));
-  resize(); pads(); hud();
+  resize(); upd();
   cam.position.set(pl.position.x, 15 * camK, pl.position.z + 13 * camK);
   clk = new THREE.Clock(); run = true; loop();
-  toast(d > 60 && gain > 0 ? `¡Tu caja acumuló 🪙 ${nf(gain)} mientras no estabas!` : 'Camina sobre los botones 🟠 para comprar y 🔵 para mejorar. Cobra en el 🟡.', 5000);
+  toast(d > 60 && gain > 0 ? `¡Tu caja acumuló 🪙 ${nf(gain)} mientras no estabas!` : 'Camina hasta un 🌳 o 🪨 y toca ⚔️ para recolectar. Compra en 🛒. ¡De noche vienen lobos!', 5500);
 };
 
 const VKF = window.VKF = {
@@ -1367,11 +1489,18 @@ const VKF = window.VKF = {
   x: () => dlg && dlg.close(),
   rk: rank,
   rkx: () => { g('tyk').hidden = true; },
+  sh: () => { g('tys').hidden = !g('tys').hidden; upd(); },
+  tb: i => {
+    tab = i;
+    [0, 1, 2].forEach(k => { g('tv' + k).hidden = k !== i; });
+    dlg.querySelectorAll('.tytb button').forEach((b, k) => b.classList.toggle('on', k === i));
+    upd();
+  },
+  co: () => collect(), bw: shoot, at: act,
   rs: () => {
     if (!confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) return;
     const uid = S.uid; S = fresh(); S.uid = uid; save(); cloud(true);
-    P.forEach(p => { p.an.forEach(a => p.grp.remove(a)); p.an = []; });
-    pads(); hud();
+    T.forEach((_, i) => sync(i)); upd();
   }
 };
 
@@ -1386,11 +1515,36 @@ dialog.tyd::backdrop{background:#000}
 .tyh b{font-size:26px;line-height:1.15}
 .tyh span{margin-left:10px;color:#cfcfd6;font-size:13px}
 .tyh em{display:block;font-style:normal;color:#ffd84a;font-size:13px;font-weight:700}
+.tyd2{display:flex;align-items:center;gap:10px;margin-top:6px;padding:0!important;background:none!important}
+.tyd2 span{margin:0;color:#fff;font-size:12px;font-weight:700;white-space:nowrap}
+.hp{flex:1;height:8px;min-width:40px;border-radius:6px;background:#ffffff33;overflow:hidden}
+.hp div{height:100%;width:100%;background:#ff4d4d;transition:width .2s}
 .tyx{pointer-events:auto;flex:none;width:46px;height:46px;border-radius:50%;border:1px solid #ffffff55;background:#000b;color:#fff;font:800 18px Montserrat,sans-serif;cursor:pointer}
-.tyt{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 100px);width:min(86vw,420px);transform:translateX(-50%);padding:10px 14px;border-radius:14px;background:#000c;color:#fff;font-size:13px;line-height:1.5;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+.tyr2{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 70px);display:flex;flex-direction:column;gap:10px}
+.tyt{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 170px);width:min(86vw,420px);transform:translateX(-50%);padding:10px 14px;border-radius:14px;background:#000c;color:#fff;font-size:13px;line-height:1.5;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
 .tyj{position:absolute;left:22px;bottom:calc(env(safe-area-inset-bottom) + 28px);width:140px;height:140px;border-radius:50%;background:#ffffff33;border:2px solid #ffffff77}
 .tyj i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#fff;opacity:.85}
-.tyr{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 20px);padding:8px 12px;border-radius:10px;border:1px solid #ffffff55;background:#0008;color:#fff;font:700 12px Montserrat,sans-serif;cursor:pointer}
+.tya{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 24px);display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.tyz{position:relative;width:62px;height:62px;border-radius:50%;border:2px solid #ffffff88;background:#000a;font-size:26px;color:#fff;cursor:pointer;touch-action:manipulation}
+.tyz.big{width:84px;height:84px;font-size:36px;border-color:var(--ac)}
+.tyz small{position:absolute;bottom:-2px;right:-2px;min-width:20px;padding:1px 5px;border-radius:10px;background:var(--ac);font:800 11px Montserrat,sans-serif}
+.tys{position:absolute;left:0;right:0;bottom:0;max-height:55vh;overflow:auto;touch-action:pan-y;padding:12px 12px calc(env(safe-area-inset-bottom) + 14px);background:#111113;border:1px solid #6b2c20;border-bottom:0;border-radius:24px 24px 0 0;color:#fff}
+.tys[hidden]{display:none}
+.tytb{display:flex;gap:6px;position:sticky;top:-12px;z-index:2;margin:-12px -12px 4px;padding:12px;background:#111113}
+.tytb button{flex:1;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:#0c0c0e;color:var(--mu);font:800 12px Montserrat,sans-serif;cursor:pointer}
+.tytb button.on{border-color:var(--ac);color:#fff;background:#ff5a1f22}
+.tytb button:last-child{flex:none;width:44px}
+.tyw{display:grid;grid-template-columns:40px 1fr auto;gap:8px 10px;align-items:center;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:16px;background:#0c0c0e}
+.tyw[hidden]{display:none}
+.tyw>span{font-size:30px;text-align:center}
+.tyw b{display:block;font-size:14px}
+.tyw small{color:var(--mu);font-size:11px}
+.tyg{display:flex;flex-direction:column;gap:6px}
+.tyg button{padding:9px 10px;border-radius:10px;border:1px solid var(--ac);background:var(--ac);color:#fff;font:800 11px Montserrat,sans-serif;white-space:nowrap;cursor:pointer}
+.tyg button.u{background:#1a1a1e;border-color:var(--line)}
+.tyg button:disabled{opacity:.4}
+.tyinv{margin:10px 0 0;font:800 16px Montserrat,sans-serif}
+.tyrs{display:block;margin:14px auto 0;background:none;border:0;color:var(--mu);text-decoration:underline;font:700 12px Montserrat,sans-serif;cursor:pointer}
 .tyk{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:#000a}
 .tyk[hidden]{display:none}
 .tyq{width:min(440px,100%);max-height:82vh;overflow:auto;touch-action:pan-y;padding:18px;border-radius:24px;border:1px solid #6b2c20;background:#111113;color:#fff}
@@ -1416,7 +1570,7 @@ const ready = f => document.readyState === 'loading' ? addEventListener('DOMCont
 ready(() => {
   document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
   const j = g('juegos');
-  if (j) j.insertAdjacentHTML('beforebegin', `<div class="fgcard"><span>🐔</span><div><b>Granja Vorka 3D</b><small>Mientras esperas tu recarga, camina por tu granja y hazla crecer. Empiezas con ${START} monedas.</small></div><button class="btn p" onclick="VKF.open()">Jugar</button></div>`);
+  if (j) j.insertAdjacentHTML('beforebegin', `<div class="fgcard"><span>🐔</span><div><b>Granja Vorka 3D</b><small>Mientras esperas tu recarga: cuida tu granja, defiéndela de noche y crea herramientas. Empiezas con ${START} monedas.</small></div><button class="btn p" onclick="VKF.open()">Jugar</button></div>`);
   const gm = g('gmsg');
   if (gm) new MutationObserver(() => {
     if (/pagado con tu saldo/.test(gm.textContent) && !gm.querySelector('.fgk'))
