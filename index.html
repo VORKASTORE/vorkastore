@@ -1026,11 +1026,11 @@ const nf = n => {
   while (n >= 1000) { n /= 1000; i++; }
   return +n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SF[i];
 };
-const fresh = () => ({ c: START, b: 0, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
+const fresh = () => ({ c: START, b: 0, tot: 0, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
 let S = (() => {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) { s.b = isFinite(s.b) ? s.b : 0; return s; }
+    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) { s.b = isFinite(s.b) ? s.b : 0; s.tot = isFinite(s.tot) ? s.tot : 0; return s; }
   } catch {}
   return fresh();
 })();
@@ -1040,7 +1040,7 @@ const bc = i => T[i][2] * R ** S.o[i];          // costo de comprar 1 animal
 const uc = i => T[i][2] * 8 * 4 ** S.u[i];      // costo de la mejora (×2 ingresos)
 
 let dlg, ren, scn, cam, clk, raf, pl, cpad, limbs, camK = 1, t = 0, hT = 0, sT = 0, tm, run = false, ld = false;
-let jx = 0, jy = 0, keys = {};
+let jx = 0, jy = 0, keys = {}, subT = 0;
 const P = [], MC = {};
 const mat = c => MC[c] || (MC[c] = new THREE.MeshLambertMaterial({ color: c }));
 const mk = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
@@ -1049,6 +1049,35 @@ const rnd = () => Math.random() * 2 - 1;
 const toast = (m, ms) => {
   const e = g('tyt'); e.textContent = m; e.style.opacity = 1;
   clearTimeout(tm); tm = setTimeout(() => { e.style.opacity = 0; }, ms || 2600);
+};
+
+/* ---------- Ranking (Supabase) ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const submit = async force => {
+  if (typeof sb === 'undefined' || !sb || !(S.tot > 0)) return;
+  if (!force && Date.now() - subT < 30000) return;
+  subT = Date.now();
+  try { await sb.rpc('submit_farm_score', { p_score: S.tot }); } catch {}
+};
+const rank = async () => {
+  const box = g('tyk'), list = g('tyl'), foot = g('tyf');
+  box.hidden = false; foot.textContent = ''; list.innerHTML = '<li class="e">Cargando…</li>';
+  try {
+    if (typeof sb === 'undefined' || !sb) throw 0;
+    const uid = ((await sb.auth.getSession()).data.session || { user: {} }).user.id;
+    if (!uid) { list.innerHTML = '<li class="e">Inicia sesión para ver el ranking.</li>'; return; }
+    await submit(true);
+    const [top, me] = await Promise.all([
+      sb.from('farm_scores').select('user_id,name,score').order('score', { ascending: false }).limit(20),
+      sb.from('farm_scores').select('score').eq('user_id', uid).maybeSingle()
+    ]);
+    if (top.error) throw top.error;
+    list.innerHTML = top.data.map((r, i) => `<li class="${r.user_id === uid ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || '#' + (i + 1)}</span><b>${esc(r.name)}</b><em>🪙 ${nf(r.score)}</em></li>`).join('') || '<li class="e">Aún no hay puntajes. ¡Sé el primero!</li>';
+    if (me.data && !top.data.some(r => r.user_id === uid)) {
+      const { count } = await sb.from('farm_scores').select('*', { count: 'exact', head: true }).gt('score', me.data.score);
+      foot.textContent = `Tu posición: #${(count || 0) + 1} · 🪙 ${nf(me.data.score)}`;
+    }
+  } catch { list.innerHTML = '<li class="e">El ranking no está disponible por ahora.</li>'; }
 };
 
 /* ---------- Etiquetas flotantes ---------- */
@@ -1209,7 +1238,7 @@ const step = dt => {
   });
   if (near(cpad)) {
     cpad.m.position.y = .04;
-    if (S.b >= 1) { const v = S.b; S.c += v; S.b = 0; toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); }
+    if (S.b >= 1) { const v = S.b; S.c += v; S.tot += v; S.b = 0; toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); submit(); }
   } else cpad.m.position.y = .1;
   const f = 1 - Math.exp(-6 * dt);
   cam.position.x += (ps.x - cam.position.x) * f;
@@ -1237,8 +1266,9 @@ const ui = () => {
   dlg = document.createElement('dialog');
   dlg.className = 'tyd';
   dlg.innerHTML = `<canvas id="tyc"></canvas>
-<div class="tyh"><div><small>GRANJA VORKA</small><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<div class="tyh"><div><small>GRANJA VORKA</small><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.rk()" aria-label="Ranking">🏆</button><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
 <div class="tyt" id="tyt"></div>
+<div class="tyk" id="tyk" hidden><div class="tyq"><div class="tyqh"><div><small>RANKING</small><b>🏆 Top granjeros</b></div><button class="tyx" onclick="VKF.rkx()" aria-label="Cerrar ranking">✕</button></div><p class="tyqp">Ordenado por el total cobrado en la caja.</p><ul class="tyl" id="tyl"></ul><p class="tyqp" id="tyf" style="color:#ffd84a;font-weight:700"></p></div></div>
 <div class="tyj" id="tyj"><i id="tyk"></i></div>
 <button class="tyr" onclick="VKF.rs()">Reiniciar</button>`;
   document.body.append(dlg);
@@ -1258,7 +1288,7 @@ const ui = () => {
   /* Teclado (computadora) */
   addEventListener('keydown', e => { if (run && e.key) keys[e.key.toLowerCase()] = 1; });
   addEventListener('keyup', e => { if (e.key) keys[e.key.toLowerCase()] = 0; });
-  dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; save(); });
+  dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; g('tyk').hidden = true; save(); submit(true); });
   addEventListener('resize', resize);
 };
 const go = () => {
@@ -1289,6 +1319,8 @@ const VKF = window.VKF = {
     document.head.append(s);
   },
   x: () => dlg && dlg.close(),
+  rk: rank,
+  rkx: () => { g('tyk').hidden = true; },
   rs: () => {
     if (!confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) return;
     S = fresh(); save();
@@ -1312,6 +1344,21 @@ dialog.tyd::backdrop{background:#000}
 .tyj{position:absolute;left:22px;bottom:calc(env(safe-area-inset-bottom) + 28px);width:140px;height:140px;border-radius:50%;background:#ffffff33;border:2px solid #ffffff77}
 .tyj i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#fff;opacity:.85}
 .tyr{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 20px);padding:8px 12px;border-radius:10px;border:1px solid #ffffff55;background:#0008;color:#fff;font:700 12px Montserrat,sans-serif;cursor:pointer}
+.tyk{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:#000a}
+.tyk[hidden]{display:none}
+.tyq{width:min(440px,100%);max-height:82vh;overflow:auto;touch-action:pan-y;padding:18px;border-radius:24px;border:1px solid #6b2c20;background:#111113;color:#fff}
+.tyqh{display:flex;align-items:center;gap:12px}
+.tyqh>div{flex:1;min-width:0}
+.tyqh small{display:block;color:var(--ac);font-weight:800;letter-spacing:.2em;font-size:10px}
+.tyqh b{font-size:22px}
+.tyqp{margin:10px 0 0;color:var(--mu);font-size:13px}
+.tyl{list-style:none;margin:8px 0 0;padding:0}
+.tyl li{display:flex;align-items:center;gap:10px;margin-top:6px;padding:10px 12px;border:1px solid #26262a;border-radius:14px;background:#0c0c0e}
+.tyl li.me{border-color:var(--ac);background:#ff5a1f22}
+.tyl li.e{justify-content:center;color:var(--mu);font-size:13px}
+.tyl span{width:36px;text-align:center;font-weight:800}
+.tyl b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tyl em{font-style:normal;color:#ffd84a;font-weight:700;font-size:13px}
 .fgcard{display:flex;align-items:center;gap:14px;margin:16px 0 0;padding:16px;border:1px solid #28431f;border-radius:20px;background:linear-gradient(160deg,#14240f,#0c0c0e 70%)}
 .fgcard>span{font-size:34px}
 .fgcard>div{flex:1}
