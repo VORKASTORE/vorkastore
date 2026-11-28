@@ -1001,18 +1001,19 @@ ready(() => {
 });
 })();
 </script>
-  <script>
-/* VORKASTORE · Minijuego "Granja Vorka" (tycoon) para jugar mientras llega la recarga.
-   PEGAR justo antes de </body>, DEBAJO de los otros <script>. No hay que tocar nada más. */
+<script>
+/* VORKASTORE · Granja Vorka 3D (tycoon estilo Roblox). REEMPLAZA al bloque anterior "Granja Vorka":
+   borra el bloque viejo y pega este justo antes de </body>, debajo de los otros <script>. */
 (() => {
 /* ===== EDITA AQUÍ ===== */
-const START = 100;   // monedas con las que empieza el jugador
-const OFFLINE = 7200; // segundos máximos que gana con la ventana cerrada (2 horas)
-// [emoji, nombre, costo base, monedas por segundo]
+const START = 100;      // monedas iniciales
+const OFFLINE = 7200;   // segundos máximos que la caja acumula con el juego cerrado (2 h)
+// [emoji, nombre, costo base, monedas por segundo, color del animal]
 const T = [
-  ['🐔', 'Gallina', 10, 0.1], ['🐑', 'Oveja', 120, 1], ['🐖', 'Cerdo', 1400, 8], ['🐄', 'Vaca', 16000, 60],
-  ['🐴', 'Caballo', 2e5, 450], ['🦙', 'Llama', 2.5e6, 3500], ['🦌', 'Ciervo dorado', 3e7, 28000],
-  ['🦄', 'Unicornio', 4e8, 2.2e5], ['🐲', 'Dragón', 5e9, 1.8e6], ['👽', 'Alien granjero', 7e10, 1.5e7]
+  ['🐔', 'Gallina', 10, 0.1, '#f7f3e8'], ['🐑', 'Oveja', 120, 1, '#e4e4e4'], ['🐖', 'Cerdo', 1400, 8, '#f4a6b8'],
+  ['🐄', 'Vaca', 16000, 60, '#8b5a3c'], ['🐴', 'Caballo', 2e5, 450, '#a0522d'], ['🦙', 'Llama', 2.5e6, 3500, '#d9c9a3'],
+  ['🦌', 'Ciervo dorado', 3e7, 28000, '#d4af37'], ['🦄', 'Unicornio', 4e8, 2.2e5, '#ffffff'],
+  ['🐲', 'Dragón', 5e9, 1.8e6, '#2e8b57'], ['👽', 'Alien granjero', 7e10, 1.5e7, '#7ee081']
 ];
 /* ======================= */
 
@@ -1025,128 +1026,303 @@ const nf = n => {
   while (n >= 1000) { n /= 1000; i++; }
   return +n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SF[i];
 };
-const fresh = () => ({ c: START, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
+const fresh = () => ({ c: START, b: 0, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
 let S = (() => {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) return s;
+    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) { s.b = isFinite(s.b) ? s.b : 0; return s; }
   } catch {}
   return fresh();
 })();
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
-
+const save = () => { S.ts = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 const ips = () => T.reduce((a, t, i) => a + S.o[i] * t[3] * 2 ** S.u[i], 0);
-const bc = (i, n) => T[i][2] * R ** S.o[i] * (R ** n - 1) / (R - 1);   // costo de comprar n animales
-const uc = i => T[i][2] * 8 * 4 ** S.u[i];                              // costo de la siguiente mejora (×2 ingresos)
-let mode = 1, dlg, tk, sv = 0;
-const qty = i => mode || Math.max(1, Math.floor(Math.log(S.c * (R - 1) / (T[i][2] * R ** S.o[i]) + 1) / Math.log(R)));
-const accrue = () => {
-  const n = Date.now(), d = Math.min(Math.max((n - S.ts) / 1000, 0), OFFLINE), gain = ips() * d;
-  S.c += gain; S.ts = n;
-  return [d, gain];
+const bc = i => T[i][2] * R ** S.o[i];          // costo de comprar 1 animal
+const uc = i => T[i][2] * 8 * 4 ** S.u[i];      // costo de la mejora (×2 ingresos)
+
+let dlg, ren, scn, cam, clk, raf, pl, cpad, limbs, camK = 1, t = 0, hT = 0, sT = 0, tm, run = false, ld = false;
+let jx = 0, jy = 0, keys = {};
+const P = [], MC = {};
+const mat = c => MC[c] || (MC[c] = new THREE.MeshLambertMaterial({ color: c }));
+const mk = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+const rnd = () => Math.random() * 2 - 1;
+
+const toast = (m, ms) => {
+  const e = g('tyt'); e.textContent = m; e.style.opacity = 1;
+  clearTimeout(tm); tm = setTimeout(() => { e.style.opacity = 0; }, ms || 2600);
 };
 
-const pen = () => {
-  g('fgpen').innerHTML = T.map((t, i) => S.o[i]
-    ? `<span>${t[0].repeat(Math.min(S.o[i], 8))}${S.o[i] > 8 ? `<small>+${nf(S.o[i] - 8)}</small>` : ''}</span>` : '').join('')
-    || '<em>Tu granja está vacía. ¡Compra tu primera gallina!</em>';
+/* ---------- Etiquetas flotantes ---------- */
+const lab = () => {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const tx = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthTest: false, fog: false }));
+  s.scale.set(5, 1.25, 1); s.renderOrder = 5; s.userData = { c, tx, k: '' };
+  return s;
 };
-const upd = () => {
-  const r = ips();
-  g('fgc').textContent = '🪙 ' + nf(S.c);
-  g('fgi').textContent = '+' + nf(r) + '/s';
-  g('fgt').textContent = '+' + nf(1 + r * .05);
-  T.forEach((t, i) => {
-    const show = i === 0 || S.o[i - 1] > 0 || S.o[i] > 0;
-    g('fr' + i).hidden = !show;
-    if (!show) return;
-    const n = qty(i), c = bc(i, n), u = uc(i);
-    g('fo' + i).textContent = '×' + S.o[i];
-    g('fs' + i).textContent = `+${nf(t[3] * 2 ** S.u[i])}/s cada uno · Nivel ${S.u[i] + 1}`;
-    g('fb' + i).textContent = `Comprar${n > 1 ? ' ×' + n : ''} · 🪙 ${nf(c)}`;
-    g('fb' + i).disabled = S.c < c;
-    g('fu' + i).textContent = `⬆ Mejorar ×2 · 🪙 ${nf(u)}`;
-    g('fu' + i).disabled = !S.o[i] || S.c < u;
+const draw = (s, a, b, ok) => {
+  const u = s.userData, k = a + b + ok;
+  if (u.k === k) return;
+  u.k = k;
+  const x = u.c.getContext('2d');
+  x.clearRect(0, 0, 512, 128);
+  x.fillStyle = ok ? 'rgba(18,58,30,.92)' : 'rgba(28,28,34,.92)'; x.fillRect(0, 0, 512, 128);
+  x.strokeStyle = ok ? '#5fcf8f' : '#555'; x.lineWidth = 6; x.strokeRect(3, 3, 506, 122);
+  x.textAlign = 'center'; x.font = '700 46px sans-serif';
+  x.fillStyle = '#fff'; x.fillText(a, 256, 55);
+  x.fillStyle = ok ? '#ffd84a' : '#ff8a80'; x.fillText(b, 256, 106);
+  u.tx.needsUpdate = true;
+};
+
+/* ---------- Mundo ---------- */
+const pad = (parent, x, z, c) => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, .2, 24), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0 }));
+  m.position.set(x, .1, z);
+  const s = lab(); s.position.set(x, 2.5, z);
+  parent.add(m, s);
+  return { m, s, x, z, cd: 0 };
+};
+const person = () => {
+  const p = new THREE.Group(), L = [];
+  const torso = mk(1, 1.2, .6, '#2e7bf6'); torso.position.y = 1.8;
+  const head = mk(.8, .8, .8, '#ffd23f'); head.position.y = 2.85;
+  const e1 = mk(.14, .14, .05, '#111'); e1.position.set(-.2, 2.95, .41);
+  const e2 = e1.clone(); e2.position.x = .2;
+  p.add(torso, head, e1, e2);
+  [[-.75, 2.35, '#ffd23f'], [.75, 2.35, '#ffd23f'], [-.25, 1.2, '#3fa34d'], [.25, 1.2, '#3fa34d']].forEach(a => {
+    const piv = new THREE.Group(), l = mk(.42, 1.15, .42, a[2]);
+    piv.position.set(a[0], a[1], 0); l.position.y = -.5; piv.add(l); p.add(piv); L.push(piv);
   });
+  limbs = L; // brazoI, brazoD, piernaI, piernaD
+  return p;
+};
+const critter = i => {
+  const k = new THREE.Group(), c = T[i][4];
+  const foot = mk(.8, .3, 1.2, '#3a3a3a'); foot.position.y = .15;
+  const b = mk(1, .8, 1.5, c); b.position.y = .7;
+  const h = mk(.7, .65, .7, c); h.position.set(0, 1.05, .95);
+  const e = mk(.12, .12, .05, '#111'); e.position.set(-.18, 1.15, 1.32);
+  const e2 = e.clone(); e2.position.x = .18;
+  k.add(foot, b, h, e, e2);
+  return k;
+};
+const world = () => {
+  ren = new THREE.WebGLRenderer({ canvas: g('tyc'), antialias: true });
+  ren.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  scn = new THREE.Scene(); scn.background = new THREE.Color(0x8fd3f4); scn.fog = new THREE.Fog(0x8fd3f4, 45, 115);
+  cam = new THREE.PerspectiveCamera(50, 1, .1, 200);
+  scn.add(new THREE.AmbientLight(0xffffff, .8));
+  const dl = new THREE.DirectionalLight(0xffffff, .55); dl.position.set(10, 25, 8); scn.add(dl);
+  const gr = mk(60, .1, 130, '#5cb85c'); gr.position.set(0, -.05, -30);
+  const al = mk(12, .02, 130, '#dccaa0'); al.position.set(0, .01, -30);
+  const cb = mk(3.2, 2.4, 3, '#c0392b'); cb.position.set(0, 1.2, -1);
+  const rf = mk(3.6, .4, 3.4, '#f1c40f'); rf.position.set(0, 2.6, -1);
+  scn.add(gr, al, cb, rf);
+  cpad = pad(scn, 0, 3.2, '#f1c40f');
+  T.forEach((_, i) => {
+    const cx = i % 2 ? 10 : -10, cz = -9 - (i >> 1) * 11, sx = i % 2 ? -1 : 1, grp = new THREE.Group();
+    const fl = mk(8, .12, 8, '#8d6e3f'); fl.position.set(cx, .06, cz); grp.add(fl);
+    [[8.4, .25, 0, 4], [8.4, .25, 0, -4], [.25, 8.4, 4, 0], [.25, 8.4, -4, 0]].forEach(f => {
+      const w = mk(f[0], .9, f[1], '#e8d8b0'); w.position.set(cx + f[2], .45, cz + f[3]); grp.add(w);
+    });
+    scn.add(grp);
+    P.push({ grp, cx, cz, an: [], buy: pad(grp, cx + sx * 6, cz - 1.8, '#ff7a1a'), up: pad(grp, cx + sx * 6, cz + 1.8, '#3b82f6') });
+  });
+  pl = person(); pl.position.set(0, 0, 8); scn.add(pl);
 };
 
-const build = () => {
+/* ---------- Lógica ---------- */
+const unlocked = i => i === 0 || S.o[i - 1] > 0 || S.o[i] > 0;
+const sync = i => {
+  const p = P[i], n = Math.min(S.o[i], 12);
+  while (p.an.length < n) {
+    const a = critter(i);
+    a.userData = { cx: p.cx, cz: p.cz, tx: p.cx, tz: p.cz, w: 0, ph: Math.random() * 6 };
+    a.position.set(p.cx + rnd() * 3, 0, p.cz + rnd() * 3);
+    p.grp.add(a); p.an.push(a);
+  }
+  const sc = (.55 + i * .07) * (1 + .07 * Math.min(S.u[i], 8));
+  p.an.forEach(a => a.scale.setScalar(sc));
+};
+const hud = () => {
+  g('tyc2').textContent = '🪙 ' + nf(S.c);
+  g('tyi').textContent = '+' + nf(ips()) + '/s';
+  g('tyb').textContent = 'Caja 🪙 ' + nf(S.b);
+};
+const pads = () => {
+  P.forEach((p, i) => {
+    const v = unlocked(i); p.grp.visible = v;
+    if (!v) return;
+    const c = bc(i), u = uc(i), okb = S.c >= c, oku = S.o[i] > 0 && S.c >= u;
+    draw(p.buy.s, `${T[i][0]} ${T[i][1]} ×${S.o[i]}`, `Comprar 🪙 ${nf(c)}`, okb);
+    draw(p.up.s, `⬆ Mejorar ${T[i][1]}`, `×2 · 🪙 ${nf(u)}`, oku);
+    p.buy.m.material.emissiveIntensity = okb ? .6 : 0;
+    p.up.m.material.emissiveIntensity = oku ? .6 : 0;
+  });
+  draw(cpad.s, '💰 COBRAR CAJA', '🪙 ' + nf(S.b), S.b >= 1);
+  cpad.m.material.emissiveIntensity = S.b >= 1 ? .7 : .1;
+};
+const buy = i => {
+  const c = bc(i);
+  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
+  S.c -= c; S.o[i]++; sync(i);
+  if (S.o[i] === 1 && T[i + 1]) toast('🔓 ¡Nuevo corral: ' + T[i + 1][1] + '!');
+  pads(); hud(); return true;
+};
+const upg = i => {
+  if (!S.o[i]) { toast('Compra primero un animal', 1500); return false; }
+  const c = uc(i);
+  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
+  S.c -= c; S.u[i]++; sync(i); pads(); hud(); return true;
+};
+const near = p => Math.hypot(pl.position.x - p.x, pl.position.z - p.z) < 1.8;
+
+/* ---------- Bucle ---------- */
+const step = dt => {
+  t += dt;
+  S.b += ips() * dt;
+  const K = keys;
+  let mx = jx + (K.d || K.arrowright ? 1 : 0) - (K.a || K.arrowleft ? 1 : 0);
+  let mz = jy + (K.s || K.arrowdown ? 1 : 0) - (K.w || K.arrowup ? 1 : 0);
+  const m = Math.hypot(mx, mz);
+  if (m > 1) { mx /= m; mz /= m; }
+  const mv = m > .1, ps = pl.position;
+  ps.x += mx * 9 * dt; ps.z += mz * 9 * dt;
+  ps.x = Math.max(-5.8, Math.min(5.8, ps.x)); ps.z = Math.max(-60, Math.min(14, ps.z));
+  if (mv) pl.rotation.y = Math.atan2(mx, mz);
+  const sw = mv ? Math.sin(t * 11) * .8 : 0;
+  limbs[0].rotation.x = sw; limbs[1].rotation.x = -sw; limbs[2].rotation.x = -sw; limbs[3].rotation.x = sw;
+  P.forEach((p, i) => {
+    if (!p.grp.visible) return;
+    const nb = near(p.buy), nu = near(p.up);
+    p.buy.m.position.y = nb ? .04 : .1; p.up.m.position.y = nu ? .04 : .1;
+    if (nb && t > p.buy.cd) p.buy.cd = t + (buy(i) ? .3 : 1);
+    if (nu && t > p.up.cd) p.up.cd = t + (upg(i) ? .5 : 1);
+    p.an.forEach(a => {
+      const u = a.userData;
+      if (u.w > 0) { u.w -= dt; a.position.y = 0; return; }
+      const dx = u.tx - a.position.x, dz = u.tz - a.position.z, d = Math.hypot(dx, dz);
+      if (d < .15) { u.w = Math.random() * 2; u.tx = u.cx + rnd() * 3.2; u.tz = u.cz + rnd() * 3.2; return; }
+      a.position.x += dx / d * 1.4 * dt; a.position.z += dz / d * 1.4 * dt;
+      a.position.y = Math.abs(Math.sin(t * 7 + u.ph)) * .12;
+      a.rotation.y = Math.atan2(dx, dz);
+    });
+  });
+  if (near(cpad)) {
+    cpad.m.position.y = .04;
+    if (S.b >= 1) { const v = S.b; S.c += v; S.b = 0; toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); }
+  } else cpad.m.position.y = .1;
+  const f = 1 - Math.exp(-6 * dt);
+  cam.position.x += (ps.x - cam.position.x) * f;
+  cam.position.y += (15 * camK - cam.position.y) * f;
+  cam.position.z += (ps.z + 13 * camK - cam.position.z) * f;
+  cam.lookAt(ps.x, 0, ps.z - 2);
+  if ((hT += dt) > .25) { hT = 0; pads(); hud(); }
+  if ((sT += dt) > 5) { sT = 0; save(); }
+};
+const loop = () => {
+  if (!run) return;
+  raf = requestAnimationFrame(loop);
+  step(Math.min(clk.getDelta(), .05));
+  ren.render(scn, cam);
+};
+const resize = () => {
+  if (!ren) return;
+  const w = innerWidth, h = innerHeight;
+  camK = w < h ? 1.65 : 1;
+  ren.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix();
+};
+
+/* ---------- Interfaz ---------- */
+const ui = () => {
   dlg = document.createElement('dialog');
-  dlg.className = 'fgd';
-  dlg.innerHTML = `<div class="fgt"><div><small>GRANJA VORKA</small><b id="fgc">🪙 0</b><span id="fgi"></span></div><button class="fgx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
-<p class="fgp">Mientras llega tu recarga, haz crecer tu granja. Tus animales siguen ganando monedas aunque cierres esta ventana. Las monedas son solo del juego y no tienen valor real.</p>
-<p class="fgp" id="fgo" style="color:var(--ac)"></p>
-<button class="fgh" onclick="VKF.tap()">🌾 Cosechar <span id="fgt"></span></button>
-<div class="fgm"><button data-m="1" class="on" onclick="VKF.m(1)">×1</button><button data-m="10" onclick="VKF.m(10)">×10</button><button data-m="0" onclick="VKF.m(0)">Máx</button></div>
-<div class="fgpen" id="fgpen"></div>
-${T.map((t, i) => `<div class="fgw" id="fr${i}" hidden><span class="fge">${t[0]}</span><div class="fgn"><b>${t[1]}<em id="fo${i}"></em></b><small id="fs${i}"></small></div><div class="fgb"><button id="fb${i}" onclick="VKF.b(${i})"></button><button class="u" id="fu${i}" onclick="VKF.up(${i})"></button></div></div>`).join('')}
-<button class="fgr" onclick="VKF.rs()">Reiniciar granja</button>`;
+  dlg.className = 'tyd';
+  dlg.innerHTML = `<canvas id="tyc"></canvas>
+<div class="tyh"><div><small>GRANJA VORKA</small><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<div class="tyt" id="tyt"></div>
+<div class="tyj" id="tyj"><i id="tyk"></i></div>
+<button class="tyr" onclick="VKF.rs()">Reiniciar</button>`;
   document.body.append(dlg);
-  dlg.addEventListener('close', () => { clearInterval(tk); accrue(); save(); });
+  /* Joystick táctil */
+  const el = g('tyj'), kn = g('tyk');
+  let id = null;
+  const mv = e => {
+    const r = el.getBoundingClientRect(), H = r.width / 2;
+    const dx = e.clientX - (r.left + H), dy = e.clientY - (r.top + H), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / H);
+    jx = dx / d * k; jy = dy / d * k;
+    kn.style.transform = `translate(${jx * H * .6}px,${jy * H * .6}px)`;
+  };
+  el.addEventListener('pointerdown', e => { id = e.pointerId; el.setPointerCapture(id); mv(e); });
+  el.addEventListener('pointermove', e => { if (e.pointerId === id) mv(e); });
+  const up = e => { if (e.pointerId !== id) return; id = null; jx = jy = 0; kn.style.transform = ''; };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  /* Teclado (computadora) */
+  addEventListener('keydown', e => { if (run && e.key) keys[e.key.toLowerCase()] = 1; });
+  addEventListener('keyup', e => { if (e.key) keys[e.key.toLowerCase()] = 0; });
+  dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; save(); });
+  addEventListener('resize', resize);
+};
+const go = () => {
+  try {
+    if (!ren) world();
+  } catch (e) { toast('Tu dispositivo no permite el modo 3D.', 5000); return; }
+  const d = Math.min(Math.max((Date.now() - S.ts) / 1000, 0), OFFLINE), gain = ips() * d;
+  S.b += gain;
+  T.forEach((_, i) => sync(i));
+  resize(); pads(); hud();
+  cam.position.set(pl.position.x, 15 * camK, pl.position.z + 13 * camK);
+  clk = new THREE.Clock(); run = true; loop();
+  toast(d > 60 && gain > 0 ? `¡Tu caja acumuló 🪙 ${nf(gain)} mientras no estabas!` : 'Camina sobre los botones 🟠 para comprar y 🔵 para mejorar. Cobra en el 🟡.', 5000);
 };
 
 const VKF = window.VKF = {
   open: () => {
-    if (!dlg) build();
-    if (dlg.open) return;
-    const [d, gain] = accrue();
-    g('fgo').textContent = d > 60 && gain > 0 ? `¡Mientras no estabas, tu granja ganó 🪙 ${nf(gain)}!` : '';
+    if (run || ld) return;
+    document.querySelectorAll('dialog[open]').forEach(d => d.close());
+    if (!dlg) ui();
     dlg.showModal();
-    pen(); upd();
-    clearInterval(tk);
-    tk = setInterval(() => { accrue(); upd(); if (++sv % 20 === 0) save(); }, 250);
+    if (window.THREE) { go(); return; }
+    ld = true; toast('Cargando granja 3D…', 8000);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';
+    s.onload = () => { ld = false; go(); };
+    s.onerror = () => { ld = false; toast('No se pudo cargar el juego 3D. Revisa tu conexión.', 6000); };
+    document.head.append(s);
   },
-  x: () => dlg.close(),
-  tap: () => { S.c += 1 + ips() * .05; upd(); },
-  m: v => { mode = v; dlg.querySelectorAll('.fgm button').forEach(b => b.classList.toggle('on', +b.dataset.m === v)); upd(); },
-  b: i => { const n = qty(i), c = bc(i, n); if (S.c < c) return; S.c -= c; S.o[i] += n; save(); pen(); upd(); },
-  up: i => { const c = uc(i); if (!S.o[i] || S.c < c) return; S.c -= c; S.u[i]++; save(); upd(); },
-  rs: () => { if (confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) { S = fresh(); save(); pen(); upd(); } }
+  x: () => dlg && dlg.close(),
+  rs: () => {
+    if (!confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) return;
+    S = fresh(); save();
+    P.forEach(p => { p.an.forEach(a => p.grp.remove(a)); p.an = []; });
+    pads(); hud();
+  }
 };
 
 const css = `
-dialog.fgd{width:min(480px,94vw);max-height:90vh;padding:22px;border-radius:28px;border-color:#6b2c20;background:radial-gradient(120% 40% at 90% 0%,#ff5a1f26,transparent 60%),#111113}
-.fgt{position:sticky;top:-22px;z-index:2;display:flex;align-items:center;gap:12px;margin:-22px -22px 12px;padding:18px 22px 12px;background:#111113ee;border-bottom:1px solid var(--line)}
-.fgt>div{flex:1;min-width:0}
-.fgt small{display:block;color:var(--ac);font-weight:800;letter-spacing:.2em;font-size:10px}
-.fgt b{font-size:28px;line-height:1.15}
-.fgt span{margin-left:10px;color:var(--mu);font-size:13px}
-.fgx{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#0c0c0e;color:var(--tx);font:800 18px Montserrat,sans-serif;cursor:pointer}
-.fgp{color:var(--mu);font-size:13px;line-height:1.6;margin:0 0 10px}
-.fgp:empty{display:none}
-.fgh{display:block;width:100%;padding:18px;border:0;border-radius:20px;background:linear-gradient(180deg,#ff7a3a,#e0480f);color:#fff;font:800 17px Montserrat,sans-serif;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.fgh:active{transform:scale(.97)}
-.fgm{display:flex;gap:8px;margin:14px 0 4px}
-.fgm button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:#0c0c0e;color:var(--mu);font:800 13px Montserrat,sans-serif;cursor:pointer}
-.fgm button.on{border-color:var(--ac);color:var(--tx);background:#ff5a1f22}
-.fgpen{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:12px 14px;min-height:48px;border-radius:20px;border:1px solid #28431f;background:linear-gradient(180deg,#14240f,#0e1a0b);font-size:22px;line-height:1.3}
-.fgpen small{margin-left:6px;font-size:12px;color:#9ccc86}
-.fgpen em{font-size:13px;font-style:normal;color:#9ccc86}
-.fgw{display:grid;grid-template-columns:44px 1fr;gap:10px 12px;align-items:center;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:18px;background:#0c0c0e}
-.fgw[hidden]{display:none}
-.fge{font-size:34px;text-align:center}
-.fgn b{display:block}
-.fgn em{margin-left:6px;font-style:normal;color:var(--ac)}
-.fgn small{color:var(--mu);font-size:12px}
-.fgb{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.fgb button{padding:11px 6px;border-radius:12px;border:1px solid var(--ac);background:var(--ac);color:#fff;font:800 12px Montserrat,sans-serif;cursor:pointer;touch-action:manipulation}
-.fgb button.u{background:#1a1a1e;border-color:var(--line);color:var(--tx)}
-.fgb button:disabled{opacity:.4;cursor:not-allowed}
-.fgr{display:block;margin:18px auto 0;background:none;border:0;color:var(--mu);text-decoration:underline;font:700 12px Montserrat,sans-serif;cursor:pointer}
+dialog.tyd{width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;inset:0;padding:0;border:0;border-radius:0;background:#8fd3f4;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;animation:none}
+dialog.tyd::backdrop{background:#000}
+#tyc{display:block;width:100%;height:100%}
+.tyh{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 14px 0;pointer-events:none}
+.tyh>div{flex:1;min-width:0;padding:10px 14px;border-radius:18px;background:#000b;color:#fff}
+.tyh small{display:block;color:var(--ac);font-weight:800;letter-spacing:.2em;font-size:10px}
+.tyh b{font-size:26px;line-height:1.15}
+.tyh span{margin-left:10px;color:#cfcfd6;font-size:13px}
+.tyh em{display:block;font-style:normal;color:#ffd84a;font-size:13px;font-weight:700}
+.tyx{pointer-events:auto;flex:none;width:46px;height:46px;border-radius:50%;border:1px solid #ffffff55;background:#000b;color:#fff;font:800 18px Montserrat,sans-serif;cursor:pointer}
+.tyt{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 100px);width:min(86vw,420px);transform:translateX(-50%);padding:10px 14px;border-radius:14px;background:#000c;color:#fff;font-size:13px;line-height:1.5;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+.tyj{position:absolute;left:22px;bottom:calc(env(safe-area-inset-bottom) + 28px);width:140px;height:140px;border-radius:50%;background:#ffffff33;border:2px solid #ffffff77}
+.tyj i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#fff;opacity:.85}
+.tyr{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 20px);padding:8px 12px;border-radius:10px;border:1px solid #ffffff55;background:#0008;color:#fff;font:700 12px Montserrat,sans-serif;cursor:pointer}
 .fgcard{display:flex;align-items:center;gap:14px;margin:16px 0 0;padding:16px;border:1px solid #28431f;border-radius:20px;background:linear-gradient(160deg,#14240f,#0c0c0e 70%)}
 .fgcard>span{font-size:34px}
 .fgcard>div{flex:1}
 .fgcard small{display:block;color:var(--mu);font-size:13px}
 .fgk{color:var(--ac);font-weight:700;cursor:pointer;text-decoration:underline}
 `;
-
 const ready = f => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', f) : f();
 ready(() => {
   document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
-  /* Tarjeta en la portada */
   const j = g('juegos');
-  if (j) j.insertAdjacentHTML('beforebegin', `<div class="fgcard"><span>🐔</span><div><b>Granja Vorka</b><small>Mientras esperas tu recarga, juega y haz crecer tu granja. Empiezas con ${START} monedas.</small></div><button class="btn p" onclick="VKF.open()">Jugar</button></div>`);
-  /* Invitación al crear un pedido */
+  if (j) j.insertAdjacentHTML('beforebegin', `<div class="fgcard"><span>🐔</span><div><b>Granja Vorka 3D</b><small>Mientras esperas tu recarga, camina por tu granja y hazla crecer. Empiezas con ${START} monedas.</small></div><button class="btn p" onclick="VKF.open()">Jugar</button></div>`);
   const gm = g('gmsg');
   if (gm) new MutationObserver(() => {
     if (/pagado con tu saldo/.test(gm.textContent) && !gm.querySelector('.fgk'))
