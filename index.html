@@ -1001,5 +1001,160 @@ ready(() => {
 });
 })();
 </script>
+  <script>
+/* VORKASTORE · Minijuego "Granja Vorka" (tycoon) para jugar mientras llega la recarga.
+   PEGAR justo antes de </body>, DEBAJO de los otros <script>. No hay que tocar nada más. */
+(() => {
+/* ===== EDITA AQUÍ ===== */
+const START = 100;   // monedas con las que empieza el jugador
+const OFFLINE = 7200; // segundos máximos que gana con la ventana cerrada (2 horas)
+// [emoji, nombre, costo base, monedas por segundo]
+const T = [
+  ['🐔', 'Gallina', 10, 0.1], ['🐑', 'Oveja', 120, 1], ['🐖', 'Cerdo', 1400, 8], ['🐄', 'Vaca', 16000, 60],
+  ['🐴', 'Caballo', 2e5, 450], ['🦙', 'Llama', 2.5e6, 3500], ['🦌', 'Ciervo dorado', 3e7, 28000],
+  ['🦄', 'Unicornio', 4e8, 2.2e5], ['🐲', 'Dragón', 5e9, 1.8e6], ['👽', 'Alien granjero', 7e10, 1.5e7]
+];
+/* ======================= */
+
+const R = 1.15, KEY = 'vk_farm', SF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+const g = id => document.getElementById(id);
+const nf = n => {
+  if (!isFinite(n)) return '∞';
+  if (n >= 1e36) return n.toExponential(2).replace('+', '');
+  let i = 0;
+  while (n >= 1000) { n /= 1000; i++; }
+  return +n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SF[i];
+};
+const fresh = () => ({ c: START, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
+let S = (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) return s;
+  } catch {}
+  return fresh();
+})();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+
+const ips = () => T.reduce((a, t, i) => a + S.o[i] * t[3] * 2 ** S.u[i], 0);
+const bc = (i, n) => T[i][2] * R ** S.o[i] * (R ** n - 1) / (R - 1);   // costo de comprar n animales
+const uc = i => T[i][2] * 8 * 4 ** S.u[i];                              // costo de la siguiente mejora (×2 ingresos)
+let mode = 1, dlg, tk, sv = 0;
+const qty = i => mode || Math.max(1, Math.floor(Math.log(S.c * (R - 1) / (T[i][2] * R ** S.o[i]) + 1) / Math.log(R)));
+const accrue = () => {
+  const n = Date.now(), d = Math.min(Math.max((n - S.ts) / 1000, 0), OFFLINE), gain = ips() * d;
+  S.c += gain; S.ts = n;
+  return [d, gain];
+};
+
+const pen = () => {
+  g('fgpen').innerHTML = T.map((t, i) => S.o[i]
+    ? `<span>${t[0].repeat(Math.min(S.o[i], 8))}${S.o[i] > 8 ? `<small>+${nf(S.o[i] - 8)}</small>` : ''}</span>` : '').join('')
+    || '<em>Tu granja está vacía. ¡Compra tu primera gallina!</em>';
+};
+const upd = () => {
+  const r = ips();
+  g('fgc').textContent = '🪙 ' + nf(S.c);
+  g('fgi').textContent = '+' + nf(r) + '/s';
+  g('fgt').textContent = '+' + nf(1 + r * .05);
+  T.forEach((t, i) => {
+    const show = i === 0 || S.o[i - 1] > 0 || S.o[i] > 0;
+    g('fr' + i).hidden = !show;
+    if (!show) return;
+    const n = qty(i), c = bc(i, n), u = uc(i);
+    g('fo' + i).textContent = '×' + S.o[i];
+    g('fs' + i).textContent = `+${nf(t[3] * 2 ** S.u[i])}/s cada uno · Nivel ${S.u[i] + 1}`;
+    g('fb' + i).textContent = `Comprar${n > 1 ? ' ×' + n : ''} · 🪙 ${nf(c)}`;
+    g('fb' + i).disabled = S.c < c;
+    g('fu' + i).textContent = `⬆ Mejorar ×2 · 🪙 ${nf(u)}`;
+    g('fu' + i).disabled = !S.o[i] || S.c < u;
+  });
+};
+
+const build = () => {
+  dlg = document.createElement('dialog');
+  dlg.className = 'fgd';
+  dlg.innerHTML = `<div class="fgt"><div><small>GRANJA VORKA</small><b id="fgc">🪙 0</b><span id="fgi"></span></div><button class="fgx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<p class="fgp">Mientras llega tu recarga, haz crecer tu granja. Tus animales siguen ganando monedas aunque cierres esta ventana. Las monedas son solo del juego y no tienen valor real.</p>
+<p class="fgp" id="fgo" style="color:var(--ac)"></p>
+<button class="fgh" onclick="VKF.tap()">🌾 Cosechar <span id="fgt"></span></button>
+<div class="fgm"><button data-m="1" class="on" onclick="VKF.m(1)">×1</button><button data-m="10" onclick="VKF.m(10)">×10</button><button data-m="0" onclick="VKF.m(0)">Máx</button></div>
+<div class="fgpen" id="fgpen"></div>
+${T.map((t, i) => `<div class="fgw" id="fr${i}" hidden><span class="fge">${t[0]}</span><div class="fgn"><b>${t[1]}<em id="fo${i}"></em></b><small id="fs${i}"></small></div><div class="fgb"><button id="fb${i}" onclick="VKF.b(${i})"></button><button class="u" id="fu${i}" onclick="VKF.up(${i})"></button></div></div>`).join('')}
+<button class="fgr" onclick="VKF.rs()">Reiniciar granja</button>`;
+  document.body.append(dlg);
+  dlg.addEventListener('close', () => { clearInterval(tk); accrue(); save(); });
+};
+
+const VKF = window.VKF = {
+  open: () => {
+    if (!dlg) build();
+    if (dlg.open) return;
+    const [d, gain] = accrue();
+    g('fgo').textContent = d > 60 && gain > 0 ? `¡Mientras no estabas, tu granja ganó 🪙 ${nf(gain)}!` : '';
+    dlg.showModal();
+    pen(); upd();
+    clearInterval(tk);
+    tk = setInterval(() => { accrue(); upd(); if (++sv % 20 === 0) save(); }, 250);
+  },
+  x: () => dlg.close(),
+  tap: () => { S.c += 1 + ips() * .05; upd(); },
+  m: v => { mode = v; dlg.querySelectorAll('.fgm button').forEach(b => b.classList.toggle('on', +b.dataset.m === v)); upd(); },
+  b: i => { const n = qty(i), c = bc(i, n); if (S.c < c) return; S.c -= c; S.o[i] += n; save(); pen(); upd(); },
+  up: i => { const c = uc(i); if (!S.o[i] || S.c < c) return; S.c -= c; S.u[i]++; save(); upd(); },
+  rs: () => { if (confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) { S = fresh(); save(); pen(); upd(); } }
+};
+
+const css = `
+dialog.fgd{width:min(480px,94vw);max-height:90vh;padding:22px;border-radius:28px;border-color:#6b2c20;background:radial-gradient(120% 40% at 90% 0%,#ff5a1f26,transparent 60%),#111113}
+.fgt{position:sticky;top:-22px;z-index:2;display:flex;align-items:center;gap:12px;margin:-22px -22px 12px;padding:18px 22px 12px;background:#111113ee;border-bottom:1px solid var(--line)}
+.fgt>div{flex:1;min-width:0}
+.fgt small{display:block;color:var(--ac);font-weight:800;letter-spacing:.2em;font-size:10px}
+.fgt b{font-size:28px;line-height:1.15}
+.fgt span{margin-left:10px;color:var(--mu);font-size:13px}
+.fgx{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#0c0c0e;color:var(--tx);font:800 18px Montserrat,sans-serif;cursor:pointer}
+.fgp{color:var(--mu);font-size:13px;line-height:1.6;margin:0 0 10px}
+.fgp:empty{display:none}
+.fgh{display:block;width:100%;padding:18px;border:0;border-radius:20px;background:linear-gradient(180deg,#ff7a3a,#e0480f);color:#fff;font:800 17px Montserrat,sans-serif;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.fgh:active{transform:scale(.97)}
+.fgm{display:flex;gap:8px;margin:14px 0 4px}
+.fgm button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:#0c0c0e;color:var(--mu);font:800 13px Montserrat,sans-serif;cursor:pointer}
+.fgm button.on{border-color:var(--ac);color:var(--tx);background:#ff5a1f22}
+.fgpen{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:12px 14px;min-height:48px;border-radius:20px;border:1px solid #28431f;background:linear-gradient(180deg,#14240f,#0e1a0b);font-size:22px;line-height:1.3}
+.fgpen small{margin-left:6px;font-size:12px;color:#9ccc86}
+.fgpen em{font-size:13px;font-style:normal;color:#9ccc86}
+.fgw{display:grid;grid-template-columns:44px 1fr;gap:10px 12px;align-items:center;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:18px;background:#0c0c0e}
+.fgw[hidden]{display:none}
+.fge{font-size:34px;text-align:center}
+.fgn b{display:block}
+.fgn em{margin-left:6px;font-style:normal;color:var(--ac)}
+.fgn small{color:var(--mu);font-size:12px}
+.fgb{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fgb button{padding:11px 6px;border-radius:12px;border:1px solid var(--ac);background:var(--ac);color:#fff;font:800 12px Montserrat,sans-serif;cursor:pointer;touch-action:manipulation}
+.fgb button.u{background:#1a1a1e;border-color:var(--line);color:var(--tx)}
+.fgb button:disabled{opacity:.4;cursor:not-allowed}
+.fgr{display:block;margin:18px auto 0;background:none;border:0;color:var(--mu);text-decoration:underline;font:700 12px Montserrat,sans-serif;cursor:pointer}
+.fgcard{display:flex;align-items:center;gap:14px;margin:16px 0 0;padding:16px;border:1px solid #28431f;border-radius:20px;background:linear-gradient(160deg,#14240f,#0c0c0e 70%)}
+.fgcard>span{font-size:34px}
+.fgcard>div{flex:1}
+.fgcard small{display:block;color:var(--mu);font-size:13px}
+.fgk{color:var(--ac);font-weight:700;cursor:pointer;text-decoration:underline}
+`;
+
+const ready = f => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', f) : f();
+ready(() => {
+  document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
+  /* Tarjeta en la portada */
+  const j = g('juegos');
+  if (j) j.insertAdjacentHTML('beforebegin', `<div class="fgcard"><span>🐔</span><div><b>Granja Vorka</b><small>Mientras esperas tu recarga, juega y haz crecer tu granja. Empiezas con ${START} monedas.</small></div><button class="btn p" onclick="VKF.open()">Jugar</button></div>`);
+  /* Invitación al crear un pedido */
+  const gm = g('gmsg');
+  if (gm) new MutationObserver(() => {
+    if (/pagado con tu saldo/.test(gm.textContent) && !gm.querySelector('.fgk'))
+      gm.insertAdjacentHTML('beforeend', '<br><a class="fgk" onclick="VKF.open()">🐔 Juega Granja Vorka mientras esperas</a>');
+  }).observe(gm, { childList: true });
+  addEventListener('pagehide', save);
+});
+})();
+</script>
 </body>
 </html>
