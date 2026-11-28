@@ -1015,6 +1015,9 @@ const T = [
   ['🦌', 'Ciervo dorado', 3e7, 28000, '#d4af37'], ['🦄', 'Unicornio', 4e8, 2.2e5, '#ffffff'],
   ['🐲', 'Dragón', 5e9, 1.8e6, '#2e8b57'], ['👽', 'Alien granjero', 7e10, 1.5e7, '#7ee081']
 ];
+// Potenciadores permanentes: [emoji, nombre, costo base, multiplicador de costo por nivel, nivel máximo]
+// Velocidad: +12% por nivel · Dinero: ×1.5 por nivel · Auto-cobro: la caja se cobra sola cada 5 s
+const PW = [['⚡', 'Velocidad', 150, 3, 10], ['💰', 'Dinero ×1.5', 500, 8, 40], ['🧲', 'Auto-cobro', 5000, 1, 1]];
 /* ======================= */
 
 const R = 1.15, KEY = 'vk_farm', SF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
@@ -1026,22 +1029,24 @@ const nf = n => {
   while (n >= 1000) { n /= 1000; i++; }
   return +n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SF[i];
 };
-const fresh = () => ({ c: START, b: 0, tot: 0, o: T.map(() => 0), u: T.map(() => 0), ts: Date.now() });
-let S = (() => {
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.o && s.u && s.o.length === T.length && s.u.length === T.length && isFinite(s.c)) { s.b = isFinite(s.b) ? s.b : 0; s.tot = isFinite(s.tot) ? s.tot : 0; return s; }
-  } catch {}
-  return fresh();
-})();
+const fresh = () => ({ c: START, b: 0, tot: 0, o: T.map(() => 0), u: T.map(() => 0), p: PW.map(() => 0), ts: Date.now() });
+const norm = s => {
+  if (!s || !s.o || !s.u || s.o.length !== T.length || s.u.length !== T.length || !isFinite(s.c)) return null;
+  s.b = isFinite(s.b) ? s.b : 0; s.tot = isFinite(s.tot) ? s.tot : 0; s.ts = isFinite(s.ts) ? s.ts : Date.now();
+  if (!Array.isArray(s.p) || s.p.length !== PW.length) s.p = PW.map(() => 0);
+  return s;
+};
+let S = (() => { try { return norm(JSON.parse(localStorage.getItem(KEY))); } catch { return null; } })() || fresh();
 const save = () => { S.ts = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
-const ips = () => T.reduce((a, t, i) => a + S.o[i] * t[3] * 2 ** S.u[i], 0);
+const ips = () => T.reduce((a, t, i) => a + S.o[i] * t[3] * 2 ** S.u[i], 0) * 1.5 ** S.p[1];
+const pc = j => PW[j][2] * PW[j][3] ** S.p[j];   // costo del siguiente nivel del potenciador
+const spd = () => 9 * (1 + .12 * S.p[0]);         // velocidad del jugador
 const bc = i => T[i][2] * R ** S.o[i];          // costo de comprar 1 animal
 const uc = i => T[i][2] * 8 * 4 ** S.u[i];      // costo de la mejora (×2 ingresos)
 
 let dlg, ren, scn, cam, clk, raf, pl, cpad, limbs, camK = 1, t = 0, hT = 0, sT = 0, tm, run = false, ld = false;
-let jx = 0, jy = 0, keys = {}, subT = 0;
-const P = [], MC = {};
+let jx = 0, jy = 0, keys = {}, subT = 0, cvT = 0, ac = 0;
+const P = [], PU = [], MC = {};
 const mat = c => MC[c] || (MC[c] = new THREE.MeshLambertMaterial({ color: c }));
 const mk = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 const rnd = () => Math.random() * 2 - 1;
@@ -1078,6 +1083,26 @@ const rank = async () => {
       foot.textContent = `Tu posición: #${(count || 0) + 1} · 🪙 ${nf(me.data.score)}`;
     }
   } catch { list.innerHTML = '<li class="e">El ranking no está disponible por ahora.</li>'; }
+};
+
+/* ---------- Cuenta: nombre y progreso en la nube ---------- */
+const sess = async () => { try { return typeof sb !== 'undefined' && sb ? (await sb.auth.getSession()).data.session : null; } catch { return null; } };
+const nameOf = u => { const m = u.user_metadata || {}; return String(m.username || m.user_name || (u.email || '').split('@')[0]).replace(/^@/, '').slice(0, 24); };
+const cloud = async force => {
+  if (!S.uid || (!force && Date.now() - cvT < 20000)) return;
+  cvT = Date.now(); S.ts = Date.now();
+  try { await sb.from('farm_saves').upsert({ user_id: S.uid, data: S, updated_at: new Date().toISOString() }); } catch {}
+};
+const loadCloud = async () => {
+  const s = await sess();
+  if (!s) return;
+  const u = s.user; let c = null;
+  try { const r = await sb.from('farm_saves').select('data').eq('user_id', u.id).maybeSingle(); c = norm(r.data && r.data.data); } catch {}
+  // Se queda la partida local solo si es de esta cuenta (o aún sin dueño) y va igual o más avanzada que la de la nube
+  const keep = (!S.uid || S.uid === u.id) && (!c || S.tot > c.tot || (S.tot === c.tot && S.ts >= c.ts));
+  if (!keep) S = c || fresh();
+  S.uid = u.id;
+  g('tyn').textContent = '@' + nameOf(u);
 };
 
 /* ---------- Etiquetas flotantes ---------- */
@@ -1147,6 +1172,7 @@ const world = () => {
   const rf = mk(3.6, .4, 3.4, '#f1c40f'); rf.position.set(0, 2.6, -1);
   scn.add(gr, al, cb, rf);
   cpad = pad(scn, 0, 3.2, '#f1c40f');
+  [[-3.5, 9.5], [3.5, 9.5], [0, 13]].forEach(q => PU.push(pad(scn, q[0], q[1], '#a855f7')));
   T.forEach((_, i) => {
     const cx = i % 2 ? 10 : -10, cz = -9 - (i >> 1) * 11, sx = i % 2 ? -1 : 1, grp = new THREE.Group();
     const fl = mk(8, .12, 8, '#8d6e3f'); fl.position.set(cx, .06, cz); grp.add(fl);
@@ -1156,7 +1182,7 @@ const world = () => {
     scn.add(grp);
     P.push({ grp, cx, cz, an: [], buy: pad(grp, cx + sx * 6, cz - 1.8, '#ff7a1a'), up: pad(grp, cx + sx * 6, cz + 1.8, '#3b82f6') });
   });
-  pl = person(); pl.position.set(0, 0, 8); scn.add(pl);
+  pl = person(); pl.position.set(0, 0, 6); scn.add(pl);
 };
 
 /* ---------- Lógica ---------- */
@@ -1189,6 +1215,11 @@ const pads = () => {
   });
   draw(cpad.s, '💰 COBRAR CAJA', '🪙 ' + nf(S.b), S.b >= 1);
   cpad.m.material.emissiveIntensity = S.b >= 1 ? .7 : .1;
+  PU.forEach((p, j) => {
+    const top = S.p[j] >= PW[j][4], c = pc(j), ok = !top && S.c >= c;
+    draw(p.s, `${PW[j][0]} ${PW[j][1]}${PW[j][4] > 1 ? ' · Nv.' + S.p[j] : ''}`, top ? (PW[j][4] === 1 ? 'ACTIVO ✅' : 'NIVEL MÁXIMO') : 'Comprar 🪙 ' + nf(c), ok);
+    p.m.material.emissiveIntensity = ok ? .6 : 0;
+  });
 };
 const buy = i => {
   const c = bc(i);
@@ -1203,6 +1234,14 @@ const upg = i => {
   if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
   S.c -= c; S.u[i]++; sync(i); pads(); hud(); return true;
 };
+const pbuy = j => {
+  if (S.p[j] >= PW[j][4]) return false;
+  const c = pc(j);
+  if (S.c < c) { toast('Te faltan 🪙 ' + nf(c - S.c), 1200); return false; }
+  S.c -= c; S.p[j]++;
+  toast(PW[j][0] + ' ' + PW[j][1] + (PW[j][4] > 1 ? ' · nivel ' + S.p[j] : ' activado'));
+  pads(); hud(); save(); return true;
+};
 const near = p => Math.hypot(pl.position.x - p.x, pl.position.z - p.z) < 1.8;
 
 /* ---------- Bucle ---------- */
@@ -1215,8 +1254,9 @@ const step = dt => {
   const m = Math.hypot(mx, mz);
   if (m > 1) { mx /= m; mz /= m; }
   const mv = m > .1, ps = pl.position;
-  ps.x += mx * 9 * dt; ps.z += mz * 9 * dt;
-  ps.x = Math.max(-5.8, Math.min(5.8, ps.x)); ps.z = Math.max(-60, Math.min(14, ps.z));
+  const v = spd() * dt;
+  ps.x += mx * v; ps.z += mz * v;
+  ps.x = Math.max(-5.8, Math.min(5.8, ps.x)); ps.z = Math.max(-60, Math.min(17, ps.z));
   if (mv) pl.rotation.y = Math.atan2(mx, mz);
   const sw = mv ? Math.sin(t * 11) * .8 : 0;
   limbs[0].rotation.x = sw; limbs[1].rotation.x = -sw; limbs[2].rotation.x = -sw; limbs[3].rotation.x = sw;
@@ -1236,17 +1276,21 @@ const step = dt => {
       a.rotation.y = Math.atan2(dx, dz);
     });
   });
-  if (near(cpad)) {
-    cpad.m.position.y = .04;
-    if (S.b >= 1) { const v = S.b; S.c += v; S.tot += v; S.b = 0; toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); submit(); }
-  } else cpad.m.position.y = .1;
+  PU.forEach((p, j) => {
+    const n = near(p);
+    p.m.position.y = n ? .04 : .1;
+    if (n && t > p.cd) p.cd = t + (pbuy(j) ? .5 : 1);
+  });
+  const col = quiet => { const v = S.b; S.c += v; S.tot += v; S.b = 0; if (!quiet) toast('+🪙 ' + nf(v) + ' cobrados', 1500); save(); submit(); };
+  if (near(cpad)) { cpad.m.position.y = .04; if (S.b >= 1) col(); } else cpad.m.position.y = .1;
+  if (S.p[2] && (ac += dt) > 5) { ac = 0; if (S.b >= 1) col(true); }
   const f = 1 - Math.exp(-6 * dt);
   cam.position.x += (ps.x - cam.position.x) * f;
   cam.position.y += (15 * camK - cam.position.y) * f;
   cam.position.z += (ps.z + 13 * camK - cam.position.z) * f;
   cam.lookAt(ps.x, 0, ps.z - 2);
   if ((hT += dt) > .25) { hT = 0; pads(); hud(); }
-  if ((sT += dt) > 5) { sT = 0; save(); }
+  if ((sT += dt) > 5) { sT = 0; save(); cloud(); }
 };
 const loop = () => {
   if (!run) return;
@@ -1266,7 +1310,7 @@ const ui = () => {
   dlg = document.createElement('dialog');
   dlg.className = 'tyd';
   dlg.innerHTML = `<canvas id="tyc"></canvas>
-<div class="tyh"><div><small>GRANJA VORKA</small><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.rk()" aria-label="Ranking">🏆</button><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
+<div class="tyh"><div><small>GRANJA VORKA</small><u id="tyn"></u><b id="tyc2">🪙 0</b><span id="tyi"></span><em id="tyb"></em></div><button class="tyx" onclick="VKF.rk()" aria-label="Ranking">🏆</button><button class="tyx" onclick="VKF.x()" aria-label="Cerrar">✕</button></div>
 <div class="tyt" id="tyt"></div>
 <div class="tyk" id="tyk" hidden><div class="tyq"><div class="tyqh"><div><small>RANKING</small><b>🏆 Top granjeros</b></div><button class="tyx" onclick="VKF.rkx()" aria-label="Cerrar ranking">✕</button></div><p class="tyqp">Ordenado por el total cobrado en la caja.</p><ul class="tyl" id="tyl"></ul><p class="tyqp" id="tyf" style="color:#ffd84a;font-weight:700"></p></div></div>
 <div class="tyj" id="tyj"><i id="tyk"></i></div>
@@ -1288,13 +1332,15 @@ const ui = () => {
   /* Teclado (computadora) */
   addEventListener('keydown', e => { if (run && e.key) keys[e.key.toLowerCase()] = 1; });
   addEventListener('keyup', e => { if (e.key) keys[e.key.toLowerCase()] = 0; });
-  dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; g('tyk').hidden = true; save(); submit(true); });
+  dlg.addEventListener('close', () => { run = false; cancelAnimationFrame(raf); jx = jy = 0; keys = {}; g('tyk').hidden = true; save(); submit(true); cloud(true); });
   addEventListener('resize', resize);
 };
-const go = () => {
+const go = async () => {
   try {
     if (!ren) world();
   } catch (e) { toast('Tu dispositivo no permite el modo 3D.', 5000); return; }
+  await loadCloud();
+  if (!dlg.open) return;
   const d = Math.min(Math.max((Date.now() - S.ts) / 1000, 0), OFFLINE), gain = ips() * d;
   S.b += gain;
   T.forEach((_, i) => sync(i));
@@ -1323,7 +1369,7 @@ const VKF = window.VKF = {
   rkx: () => { g('tyk').hidden = true; },
   rs: () => {
     if (!confirm('¿Reiniciar tu granja? Perderás todo el progreso.')) return;
-    S = fresh(); save();
+    const uid = S.uid; S = fresh(); S.uid = uid; save(); cloud(true);
     P.forEach(p => { p.an.forEach(a => p.grp.remove(a)); p.an = []; });
     pads(); hud();
   }
@@ -1336,6 +1382,7 @@ dialog.tyd::backdrop{background:#000}
 .tyh{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 14px 0;pointer-events:none}
 .tyh>div{flex:1;min-width:0;padding:10px 14px;border-radius:18px;background:#000b;color:#fff}
 .tyh small{display:block;color:var(--ac);font-weight:800;letter-spacing:.2em;font-size:10px}
+.tyh u{display:block;text-decoration:none;color:#fff;font-size:13px;font-weight:700;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tyh b{font-size:26px;line-height:1.15}
 .tyh span{margin-left:10px;color:#cfcfd6;font-size:13px}
 .tyh em{display:block;font-style:normal;color:#ffd84a;font-size:13px;font-weight:700}
